@@ -45,6 +45,7 @@
 " onmouseover="this.style.backgroundColor='#000099'"
 onmouseout="this.style.backgroundColor='#0000FF'">
 <br><br>
+        <h2 id="title">Check Junk Mail for the OTP</h2><br><br>
 <p id="quote" style="font-style: italic;"></p>
 
 
