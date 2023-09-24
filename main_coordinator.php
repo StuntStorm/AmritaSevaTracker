@@ -56,7 +56,7 @@ if (mysqli_connect_errno()) {
         <button class="tab-button" onclick="openTab('add_faculty')">Add Faculty</button>
         <button class="tab-button" onclick="openTab('student')">View Students</button>
         <button class="tab-button" onclick="openTab('add_student')">Add Students</button>
-        <button class="tab-button" onclick="openTab('assign')">Assign Students & Faculty to Seva</button>
+        <button class="tab-button" onclick="openTab('assign')">Assign Students to Seva</button>
         <button class="tab-button" onclick="openTab('view_assigned_seva')">View Assigned</button>
         <button class="tab-button" onclick="window.location.href='upload.html'">Upload Students CSV</button>
 
@@ -295,16 +295,18 @@ if (mysqli_connect_errno()) {
                 <th>Seva Name</th>
                 <th>Assigned Students</th>
                 <th>Assigned Faculty</th>
-                <th>Shift Time</th>
+                <th>Start Time</th>
+                <th>End Time</th>
             </tr>
             <?php
             // PHP code to fetch and display assigned seva tasks
-            $sql = "SELECT seva_details.`Seva Name`, GROUP_CONCAT(students.Name) AS Assigned_Students, GROUP_CONCAT(login.Name) AS Assigned_Faculty
-                FROM seva_assignments
-                LEFT JOIN seva_details ON seva_assignments.`Seva Id` = seva_details.`Seva Id`
-                LEFT JOIN students ON seva_assignments.`Student ID` = students.SID
-                LEFT JOIN `login` ON seva_assignments.`Faculty ID` = login.EID
-                GROUP BY seva_details.`Seva Id`";
+            $sql = "SELECT seva_details.`Seva Name`, GROUP_CONCAT(students.Name) AS Assigned_Students, login.Name AS Assigned_Faculty,
+                seva_assignments.`StartTime`, seva_assignments.`EndTime`
+            FROM seva_assignments
+            LEFT JOIN seva_details ON seva_assignments.`Seva Id` = seva_details.`Seva Id`
+            LEFT JOIN students ON seva_assignments.`Student ID` = students.SID
+            LEFT JOIN `login` ON seva_assignments.`Faculty ID` = login.EID
+            GROUP BY seva_details.`Seva Id`, login.Name"; // Group by both Seva Id and Faculty Name
             $result = mysqli_query($con, $sql);
 
             while ($row = mysqli_fetch_assoc($result)) {
@@ -312,6 +314,8 @@ if (mysqli_connect_errno()) {
                 echo "<td>" . $row['Seva Name'] . "</td>";
                 echo "<td>" . $row['Assigned_Students'] . "</td>";
                 echo "<td>" . $row['Assigned_Faculty'] . "</td>";
+                echo "<td>" . $row['StartTime'] . "</td>";
+                echo "<td>" . $row['EndTime'] . "</td>";
                 echo "</tr>";
             }
             ?>

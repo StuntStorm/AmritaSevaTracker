@@ -40,6 +40,7 @@ if (mysqli_connect_errno()) {
         <button class="tab-button" onclick="openTab('faculty')">Faculty</button>
         <button class="tab-button" onclick="openTab('student')">Student</button>
         <button class="tab-button" onclick="openTab('attendance')">Mark Attendance</button>
+        <button class="tab-button" onclick="openTab('view_assigned_seva')">View Assigned</button>
     </div>
 
     <div id="seva" class="tab" style="display: block;">
@@ -142,6 +143,41 @@ if (mysqli_connect_errno()) {
             <!-- Submit button to mark attendance -->
             <input type="submit" value="Mark Attendance">
         </form>
+    </div>
+
+    <div id="view_assigned_seva" class="tab">
+        <br>
+        <h3>View Assigned Seva</h3>
+        <table>
+            <tr>
+                <th>Seva Name</th>
+                <th>Assigned Students</th>
+                <th>Assigned Faculty</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+            </tr>
+            <?php
+            // PHP code to fetch and display assigned seva tasks
+            $sql = "SELECT seva_details.`Seva Name`, GROUP_CONCAT(students.Name) AS Assigned_Students, login.Name AS Assigned_Faculty,
+                seva_assignments.`StartTime`, seva_assignments.`EndTime`
+            FROM seva_assignments
+            LEFT JOIN seva_details ON seva_assignments.`Seva Id` = seva_details.`Seva Id`
+            LEFT JOIN students ON seva_assignments.`Student ID` = students.SID
+            LEFT JOIN `login` ON seva_assignments.`Faculty ID` = login.EID
+            GROUP BY seva_details.`Seva Id`, login.Name"; // Group by both Seva Id and Faculty Name
+            $result = mysqli_query($con, $sql);
+
+            while ($row = mysqli_fetch_assoc($result)) {
+                echo "<tr>";
+                echo "<td>" . $row['Seva Name'] . "</td>";
+                echo "<td>" . $row['Assigned_Students'] . "</td>";
+                echo "<td>" . $row['Assigned_Faculty'] . "</td>";
+                echo "<td>" . $row['StartTime'] . "</td>";
+                echo "<td>" . $row['EndTime'] . "</td>";
+                echo "</tr>";
+            }
+            ?>
+        </table>
     </div>
 
 
