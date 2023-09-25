@@ -30,7 +30,7 @@
         $user_type = "student"; // Hardcoded for students
     
         // Remove dots and convert to uppercase
-        $rollNumber = strtoupper(str_replace('.', '', $rawRollNumber));
+        $rollNumber = strtoupper($rawRollNumber);
     
         // Check if the email address has the correct domain
         if (!endsWith($email, '@am.students.amrita.edu')) {
@@ -41,21 +41,26 @@
             <?php
             exit; // Exit the script if the email format is incorrect
         }
+
+        $email_check_query = mysqli_query($connect, "SELECT * FROM students WHERE Email='$email'");
+        $emailRowCount = mysqli_num_rows($email_check_query);
     
-        $check_query = mysqli_query($connect, "SELECT * FROM students where email ='$email'");
-        $rowCount = mysqli_num_rows($check_query);
+        if($emailRowCount > 0) {
+            ?>
+            <script>
+                alert("Sorry, email already exists for another user.");
+            </script>
+            <?php
+            exit; // Exit the script if the email already exists
+        }
     
-        if(!empty($email) && !empty($password)){
-            if($rowCount > 0){
-                ?>
-                <script>
-                    alert("User with email already exists!");
-                </script>
-                <?php
-            } else {
-                $password_hash = password_hash($password, PASSWORD_BCRYPT);
-    
-                $result = mysqli_query($connect, "INSERT INTO students (Name, RollNumber, Email, Contact, Semester, Batch, user_type, password) VALUES ('$name', '$rollNumber', '$email', '$contact', '$semester', '$batch', '$user_type', '$password_hash')");
+        $roll_check_query = mysqli_query($connect, "SELECT * FROM students WHERE RollNumber='$rollNumber'");
+    $rollRowCount = mysqli_num_rows($roll_check_query);
+
+    if($rollRowCount > 0) {
+        $password_hash = password_hash($password, PASSWORD_BCRYPT);
+        $update_query = "UPDATE students SET Email='$email', password='$password_hash' WHERE RollNumber='$rollNumber'";
+        $result = mysqli_query($connect, $update_query);
     
                 if($result){
                     $otp = rand(100000,999999);
@@ -99,6 +104,9 @@
                         <?php
                     }
                 }
+                else {
+                  $password_hash = password_hash($password, PASSWORD_BCRYPT);
+                  $result = mysqli_query($connect, "INSERT INTO students (Name, RollNumber, Email, Contact, Semester, Batch, user_type, password) VALUES ('$name', '$rollNumber', '$email', '$contact', '$semester', '$batch', '$user_type', '$password_hash')");
             }
         }
     }

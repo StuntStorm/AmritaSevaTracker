@@ -26,13 +26,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $faculty_name = $row['name'];
         }
 
+        mysqli_stmt_store_result($stmt);
+
         // Check if the Seva coordinator is already assigned
         $checkQuery = "SELECT * FROM seva_details WHERE `Seva Id` = $sevaId AND `Seva Coordinator` = $facultyId";
         $result = mysqli_query($con, $checkQuery);
 
         if (mysqli_num_rows($result) == 0) {
             // Update the Seva coordinator in the seva_details table
-            $updateQuery = "UPDATE seva_details SET `Seva Coordinator` = ?, `EID` = ? WHERE `Seva Id` = ?";
+            $updateQuery = "UPDATE seva_details SET `Seva Coordinator` = ?, `Faculty ID` = ? WHERE `Seva Id` = ?";
             $stmtUpdate = mysqli_prepare($con, $updateQuery);
 
             if (!$stmtUpdate) {

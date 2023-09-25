@@ -224,7 +224,7 @@ if (mysqli_connect_errno()) {
     <div id="assign" class="tab">
         <br>
         <h3>Assign Tasks</h3>
-        <form action="assign.php" method="post">
+        <form action="attendance.php" method="post">
             <!-- Dropdown to select the seva/task -->
             <label for="seva_select">Select a Seva:</label>
             <select id="seva_select" name="seva_id">

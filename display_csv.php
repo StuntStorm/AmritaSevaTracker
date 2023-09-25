@@ -16,21 +16,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES['csvFile'])) {
 
     if (($handle = fopen($file, "r")) !== FALSE) {
         while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {  // assuming comma-separated CSV
-            // Assuming your CSV columns are in this order: Name, RollNumber, Email, Contact, Semester, Batch
+            // Assuming your CSV columns are now in this order: Name, RollNumber, Contact, Semester, Batch
             $name = $data[0];
             $rollNumber = $data[1];
-            $email = $data[2];
-            $contact = $data[3];
-            $semester = $data[4];
-            $batch = $data[5];
+            $contact = $data[2];
+            $semester = $data[3];
+            $batch = $data[4];
 
             // Set default values for SID, user_type, and password
             $sid = NULL;  // Auto-incremented
             $userType = 'student';
             $password = '';
 
-            $stmt = $conn->prepare("INSERT INTO students (SID, Name, RollNumber, Email, Contact, Semester, Batch, user_type, Password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("sssssssss", $sid, $name, $rollNumber, $email, $contact, $semester, $batch, $userType, $password);
+            // Updated the SQL and binding to exclude Email
+            $stmt = $conn->prepare("INSERT INTO students (SID, Name, RollNumber, Contact, Semester, Batch, user_type, Password) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("ssssssss", $sid, $name, $rollNumber, $contact, $semester, $batch, $userType, $password);
             $stmt->execute();
         }
         fclose($handle);
@@ -57,3 +57,4 @@ if ($result->num_rows > 0) {
 }
 
 $conn->close();
+
