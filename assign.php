@@ -76,14 +76,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $rollNumber = $_POST["roll_number"];
         $studentName = $_POST["student_name"];
         $batch = $_POST["batch"];
-        $email = $_POST["email"];
         $contact = $_POST["contact"];
         $semester = $_POST["semester"];
 
         // Check if the required fields are not empty
-        if (!empty($rollNumber) && !empty($studentName) && !empty($batch) && !empty($email) && !empty($contact) && !empty($semester)) {
+        if (!empty($rollNumber) && !empty($studentName) && !empty($batch) && !empty($contact) && !empty($semester)) {
             // Insert the new student into the database
-            $insertStudentQuery = "INSERT INTO students (`Name`, `RollNumber`, `Email`, `Contact`, `Semester`, `Batch`, `user_type`) VALUES ('$studentName', '$rollNumber', '$email', '$contact', $semester, '$batch', 'student')";
+            $insertStudentQuery = "INSERT INTO students (`Name`, `RollNumber`, `Contact`, `Semester`, `Batch`, `user_type`) VALUES ('$studentName', '$rollNumber', '$contact', $semester, '$batch', 'student')";
 
             if (mysqli_query($con, $insertStudentQuery)) {
                 echo "New student added successfully.";
@@ -100,13 +99,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $facultyName = $_POST["faculty_name"];
         $department = $_POST["department"];
-        $email = $_POST["email"];
         $contact = $_POST["contact"];
 
         // Check if the required fields are not empty
-        if (!empty($facultyName) && !empty($department) && !empty($email) && !empty($contact)) {
+        if (!empty($facultyName) && !empty($department) && !empty($contact)) {
             // Insert the new faculty member into the `login` table
-            $insertFacultyQuery = "INSERT INTO login (`name`, `department`, `email`, `contact`, `user_type`) VALUES ('$facultyName', '$department', '$email', '$contact', 'faculty')";
+            $insertFacultyQuery = "INSERT INTO login (`name`, `department`, `contact`, `user_type`) VALUES ('$facultyName', '$department', '$contact', 'faculty')";
 
             if (mysqli_query($con, $insertFacultyQuery)) {
                 echo "New faculty member added successfully.";

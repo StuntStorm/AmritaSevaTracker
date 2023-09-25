@@ -189,8 +189,6 @@ if (mysqli_connect_errno()) {
             <input type="text" id="student_name" name="student_name">
             <label for="roll_number">Roll Number:</label>
             <input type="text" id="roll_number" name="roll_number">
-            <label for="email">Email:</label>
-            <input type="text" id="email" name="email">
             <label for="contact">Contact:</label>
             <input type="text" id="contact" name="contact">
             <label for="semester">Semester:</label>
