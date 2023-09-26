@@ -1,5 +1,14 @@
 <?php
 
+session_start();
+
+// Check if the user is not authenticated (not logged in)
+if (!isset($_SESSION['id'])) {
+    // Redirect to the login page or display an error message
+    header("Location: login.php");
+    exit();
+}
+
 $DATABASE_HOST = 'localhost';
 $DATABASE_USER = 'root';
 $DATABASE_PASS = '';
@@ -37,13 +46,12 @@ if (mysqli_connect_errno()) {
 <body>
     <div class="button-container">
         <button class="tab-button" onclick="openTab('seva')">View Seva</button>
-        <button class="tab-button" onclick="openTab('faculty')">View Faculty</button>
-        <button class="tab-button" onclick="openTab('add_faculty')">Add Faculty</button>
         <button class="tab-button" onclick="openTab('student')">View Students</button>
-        <button class="tab-button" onclick="openTab('attendance')">Mark Attendance</button>
         <button class="tab-button" onclick="openTab('add_student')">Add Students</button>
-        <button class="tab-button" onclick="openTab('assign')">Assign Students & Faculty to Seva</button>
+        <button class="tab-button" onclick="openTab('attendance')">Mark Attendance</button>
+        <button class="tab-button" onclick="openTab('assign')">Assign Students to Seva</button>
         <button class="tab-button" onclick="openTab('view_assigned_seva')">View Assigned</button>
+        <button class="tab-button" onclick="openTab('profile')">Profile</button>
         <button class="tab-button" onclick="window.location.href='upload.html'">Upload Students CSV</button>
     </div>
     <div id="seva" class="tab" style="display: block;">
@@ -139,8 +147,10 @@ if (mysqli_connect_errno()) {
 
             <!-- List of students for attendance -->
             <div class="attendance-container">
+                <!-- This hidden input field will hold the selected student IDs -->
+                <input type="hidden" name="students" id="students-input" value="">
             </div>
-            <br><br>
+
 
 
             <!-- Submit button to mark attendance -->
@@ -169,48 +179,6 @@ if (mysqli_connect_errno()) {
         </form>
     </div>
 
-    <div id="faculty" class="tab">
-        <br>
-        <h3>Faculty Details</h3>
-        <table>
-            <tr>
-                <th>Name</th>
-                <th>Dept</th>
-                <th>Email</th>
-                <th>Contact</th>
-            </tr>
-            <?php
-            $sql = "SELECT * FROM login where user_type = 'faculty'";
-            $result = mysqli_query($con, $sql);
-
-            while ($row = mysqli_fetch_assoc($result)) {
-                echo "<tr>";
-                echo "<td>" . $row['name'] . "</td>";
-                echo "<td>" . $row['department'] . "</td>";
-                echo "<td>" . $row['email'] . "</td>";
-                echo "<td>" . $row['contact'] . "</td>";
-                echo "</tr>";
-            }
-            ?>
-        </table>
-    </div>
-
-    <div id="add_faculty" class="tab">
-        <br>
-        <h3>Add Faculty</h3>
-        <form action="assign.php" method="post">
-            <label for="faculty_name">Faculty Name:</label>
-            <input type="text" id="faculty_name" name="faculty_name">
-            <label for="department">Department: </label>
-            <input type="text" id="department" name="department">
-            <label for="contact">Contact:</label>
-            <input type="text" id="contact" name="contact">
-            <br><br>
-
-            <input type="submit" name="add_faculty" value="Add Faculty">
-        </form>
-    </div>
-
     <div id="assign" class="tab">
         <br>
         <h3>Assign Tasks</h3>
@@ -219,26 +187,23 @@ if (mysqli_connect_errno()) {
             <label for="seva_select">Select a Seva:</label>
             <select id="seva_select" name="seva_id">
                 <?php
-                // PHP code to fetch seva names and IDs from the database
-                $sql = "SELECT `Seva Id`, `Seva Name` FROM seva_details";
+                // PHP code to fetch seva names, IDs, and shifts from the database
+                $sql = "SELECT `Seva Id`, `Seva Name`, StartTime, EndTime FROM seva_details";
                 $result = mysqli_query($con, $sql);
 
                 while ($row = mysqli_fetch_assoc($result)) {
-                    echo "<option value='" . $row['Seva Id'] . "'>" . $row['Seva Name'] . "</option>";
+                    $sevaId = $row['Seva Id'];
+                    $sevaName = $row['Seva Name'];
+                    $startTime = $row['StartTime'];
+                    $endTime = $row['EndTime'];
+
+                    // Display Seva name along with shift in parentheses
+                    $sevaLabel = "$sevaName ($startTime - $endTime)";
+
+                    echo "<option value='$sevaId'>$sevaLabel</option>";
                 }
                 ?>
             </select>
-            <br>
-
-            <!-- Shift section -->
-            <label for="shift">Shift:</label>
-            <div id="shift">
-                <label for="start_time">Start Time:</label>
-                <input type="time" id="start_time" name="start_time" required>
-
-                <label for="end_time">End Time:</label>
-                <input type="time" id="end_time" name="end_time" required>
-            </div>
             <br>
 
             <div class="assignment-container">
@@ -309,6 +274,42 @@ if (mysqli_connect_errno()) {
     </div>
 
 
+    <!-- Add the Profile tab content here -->
+    <div id="profile" class="tab">
+        <br>
+        <h3>User Profile</h3>
+        <?php
+        // Retrieve and display user profile information
+        $user_id = $_SESSION['id'];
+        $profile_sql = "SELECT * FROM login WHERE EID = ?";
+        $profile_stmt = mysqli_prepare($con, $profile_sql);
+        mysqli_stmt_bind_param($profile_stmt, 'i', $user_id);
+        mysqli_stmt_execute($profile_stmt);
+        $profile_result = mysqli_stmt_get_result($profile_stmt);
+
+        if ($profile_row = mysqli_fetch_assoc($profile_result)) {
+            // Start the table
+            echo "<table border='1'>";
+
+            // Display user profile information in table rows
+            echo "<tr><th>Name</th><td>" . $profile_row['name'] . "</td></tr>";
+            echo "<tr><th>Batch</th><td>" . $profile_row['department'] . "</td></tr>";
+            echo "<tr><th>Email</th><td>" . $profile_row['email'] . "</td></tr>";
+            echo "<tr><th>Contact</th><td>" . $profile_row['contact'] . "</td></tr>";
+
+            // Close the table
+            echo "</table>";
+
+            // Add more profile information fields as needed
+        } else {
+            // Handle the case where no profile information is found
+            echo "<p>No profile information available.</p>";
+        }
+
+        mysqli_stmt_close($profile_stmt);
+        ?>
+    </div>
+
     <div class="button-container">
         <!-- Add the logout button here -->
         <form action="logout.php" method="post">
@@ -334,12 +335,16 @@ if (mysqli_connect_errno()) {
                 });
             });
         });
+        // Initialize an array to store selected student IDs
+        var selectedStudentIDs = [];
+
         document.getElementById('seva_select_attendance').addEventListener('change', function() {
             var sevaId = this.value; // Get the selected Seva ID
             var studentsContainer = document.querySelector('.attendance-container');
 
-            // Clear the existing student list
+            // Clear the existing student list and reset the selectedStudentIDs array
             studentsContainer.innerHTML = '';
+            selectedStudentIDs = [];
 
             // Fetch students who are part of the selected Seva using AJAX
             var xhr = new XMLHttpRequest();
@@ -355,6 +360,23 @@ if (mysqli_connect_errno()) {
                         studentCheckbox.type = 'checkbox';
                         studentCheckbox.name = 'students[]';
                         studentCheckbox.value = student.SID;
+
+                        // Add an event listener to track when a student is selected
+                        studentCheckbox.addEventListener('change', function() {
+                            if (this.checked) {
+                                // If checkbox is checked, add student ID to the selectedStudentIDs array
+                                selectedStudentIDs.push(student.SID);
+                            } else {
+                                // If checkbox is unchecked, remove student ID from the array
+                                var index = selectedStudentIDs.indexOf(student.SID);
+                                if (index !== -1) {
+                                    selectedStudentIDs.splice(index, 1);
+                                }
+                            }
+
+                            // Update the hidden input field with selected student IDs
+                            document.getElementById('students-input').value = JSON.stringify(selectedStudentIDs);
+                        });
 
                         var studentLabel = document.createElement('label');
                         studentLabel.appendChild(studentCheckbox);

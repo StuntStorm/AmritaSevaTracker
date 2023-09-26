@@ -3,22 +3,62 @@
 <head>
     <title>Upload CSV and Display</title>
     <link rel="stylesheet" type="text/css" href="home.css">
+    <style>
+        .tab {
+            display: none;
+        }
+
+        .tab-button {
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        .tab-container {
+            display: flex;
+        }
+
+        .tab-left {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .tab-right {
+            flex: 1;
+            padding: 20px;
+        }
+
+        table {
+            border: 1px solid;
+            border-collapse: collapse;
+        }
+    </style>
 </head>
 <body>
 <div class="button-container">
-<form action="display_csv.php" method="post" enctype="multipart/form-data">
-    Select STUDENT CSV to upload:
-    <input class="tab-button" type="file" name="csvFile" id="csvFile">
-    <input type="submit" value="Upload and Display" name="submit">
-</form>
+    <form action="display_csv.php" method="post" enctype="multipart/form-data">
+        Select STUDENT CSV to upload:
+        <input class="tab-button" type="file" name="csvFile" id="csvFile">
+        <input type="submit" value="Upload and Display" name="submit">
+    </form>
 </div>
-<br><br><br>
+
 <div class="button-container">
     <form action="faculty_csv.php" method="post" enctype="multipart/form-data">
         Select FACULTY CSV to upload:
         <input class="tab-button" type="file" name="csvFile" id="csvFile">
         <input type="submit" value="Upload and Display" name="submit">
     </form>
-    </div>
+</div>
+
+<div class="button-container">
+    <button class="tab-button" onclick="goBack()">Back</button>
+</div>
+
+<script>
+function goBack() {
+    window.history.back();
+}
+</script>
+
 </body>
 </html>

@@ -1,5 +1,14 @@
 <?php
 
+session_start();
+
+// Check if the user is not authenticated (not logged in)
+if (!isset($_SESSION['id'])) {
+    // Redirect to the login page or display an error message
+    header("Location: login.php");
+    exit();
+}
+
 $DATABASE_HOST = 'localhost';
 $DATABASE_USER = 'root';
 $DATABASE_PASS = '';
@@ -36,34 +45,11 @@ if (mysqli_connect_errno()) {
 
 <body>
     <div class="button-container">
-        <button class="tab-button" onclick="openTab('seva')">Seva</button>
-        <button class="tab-button" onclick="openTab('faculty')">Faculty</button>
         <button class="tab-button" onclick="openTab('student')">Student</button>
         <button class="tab-button" onclick="openTab('attendance')">Mark Attendance</button>
         <button class="tab-button" onclick="openTab('view_assigned_seva')">View Assigned</button>
-    </div>
+        <button class="tab-button" onclick="openTab('profile')">Profile</button>
 
-    <div id="seva" class="tab" style="display: block;">
-        <br>
-        <h3>Seva Details</h3>
-        <table>
-            <tr>
-                <th>Seva Name</th>
-                <th>Seva Coordinator</th>
-            </tr>
-            <?php
-            // PHP code to fetch and display seva details
-            $sql = "SELECT * FROM seva_details";
-            $result = mysqli_query($con, $sql);
-
-            while ($row = mysqli_fetch_assoc($result)) {
-                echo "<tr>";
-                echo "<td>" . $row['Seva Name'] . "</td>";
-                echo "<td>" . $row['Seva Coordinator'] . "</td>";
-                echo "</tr>";
-            }
-            ?>
-        </table>
     </div>
 
     <div id="student" class="tab">
@@ -159,15 +145,22 @@ if (mysqli_connect_errno()) {
             <?php
             // PHP code to fetch and display assigned seva tasks
             $sql = "SELECT seva_details.`Seva Name`, GROUP_CONCAT(students.Name) AS Assigned_Students, login.Name AS Assigned_Faculty,
-                seva_assignments.`StartTime`, seva_assignments.`EndTime`
-            FROM seva_assignments
-            LEFT JOIN seva_details ON seva_assignments.`Seva Id` = seva_details.`Seva Id`
-            LEFT JOIN students ON seva_assignments.`Student ID` = students.SID
-            LEFT JOIN `login` ON seva_assignments.`Faculty ID` = login.EID
-            GROUP BY seva_details.`Seva Id`, login.Name"; // Group by both Seva Id and Faculty Name
-            $result = mysqli_query($con, $sql);
+        seva_assignments.`StartTime`, seva_assignments.`EndTime`
+        FROM seva_assignments
+        LEFT JOIN seva_details ON seva_assignments.`Seva Id` = seva_details.`Seva Id`
+        LEFT JOIN students ON seva_assignments.`Student ID` = students.SID
+        LEFT JOIN `login` ON seva_assignments.`Faculty ID` = login.EID
+        WHERE login.EID = ? -- Add this condition to filter by faculty ID
+        GROUP BY seva_details.`Seva Id`, login.Name";
 
-            while ($row = mysqli_fetch_assoc($result)) {
+            // Prepare and execute the SQL query with the faculty ID as a parameter
+            $faculty_id = $_SESSION['id'];
+            $profile_stmt = mysqli_prepare($con, $sql);
+            mysqli_stmt_bind_param($profile_stmt, 'i', $faculty_id);
+            mysqli_stmt_execute($profile_stmt);
+            $profile_result = mysqli_stmt_get_result($profile_stmt);
+
+            while ($row = mysqli_fetch_assoc($profile_result)) {
                 echo "<tr>";
                 echo "<td>" . $row['Seva Name'] . "</td>";
                 echo "<td>" . $row['Assigned_Students'] . "</td>";
@@ -180,25 +173,31 @@ if (mysqli_connect_errno()) {
         </table>
     </div>
 
-
-    <div id="add_student" class="tab">
+    <div id="profile" class="tab" style="display: block;">
         <br>
-        <h3>Add Student</h3>
-        <form action="assign.php" method="post">
-            <label for="student_name">Student Name:</label>
-            <input type="text" id="student_name" name="student_name">
-            <label for="roll_number">Roll Number:</label>
-            <input type="text" id="roll_number" name="roll_number">
-            <label for="contact">Contact:</label>
-            <input type="text" id="contact" name="contact">
-            <label for="semester">Semester:</label>
-            <input type="text" id="semester" name="semester">
-            <label for="batch">Batch:</label>
-            <input type="text" id="batch" name="batch">
-            <br><br>
+        <h3>Your Profile</h3>
+        <table>
+            <tr>
+                <th>EID</th>
+                <td><?php echo $_SESSION['id']; ?></td>
+            </tr>
+            <?php
+            // PHP code to fetch and display additional profile information
+            $sql = "SELECT `Name`, `Department`, `Email`, `Contact` FROM login WHERE EID = ?";
+            $profile_stmt = mysqli_prepare($con, $sql);
+            mysqli_stmt_bind_param($profile_stmt, 'i', $_SESSION['id']);
+            mysqli_stmt_execute($profile_stmt);
+            $profile_result = mysqli_stmt_get_result($profile_stmt);
 
-            <input type="submit" name="add_student" value="Add Student">
-        </form>
+            if ($profile_row = mysqli_fetch_assoc($profile_result)) {
+                echo "<tr><th>Name</th><td>" . $profile_row['Name'] . "</td></tr>";
+                echo "<tr><th>Department</th><td>" . $profile_row['Department'] . "</td></tr>";
+                echo "<tr><th>Email</th><td>" . $profile_row['Email'] . "</td></tr>";
+                echo "<tr><th>Contact</th><td>" . $profile_row['Contact'] . "</td></tr>";
+            }
+            mysqli_stmt_close($profile_stmt);
+            ?>
+        </table>
     </div>
 
 

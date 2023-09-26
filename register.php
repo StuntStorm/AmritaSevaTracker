@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function isValidEmail(email) {
     // A basic regex for validating an email format
-    var regex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+amrita\.edu$/;
+    var regex = /^[a-zA-Z0-9.-]+@[a-zA-Z0-9.-]+amrita\.edu$/;
     return regex.test(email);
 }
 

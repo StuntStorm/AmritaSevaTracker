@@ -18,56 +18,99 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $sevaId = $_POST["seva_id"];
         $facultyId = $_POST["faculty_id"];
         $faculty_name = "";
-        $query = "SELECT `name` FROM login WHERE EID = '$facultyId'";
-        $result = mysqli_query($con, $query);
+        $query = "SELECT `name` FROM login WHERE EID = ?";
 
-        if ($result && mysqli_num_rows($result) > 0) {
-            $row = mysqli_fetch_assoc($result);
-            $faculty_name = $row['name'];
+        // Use prepared statement to avoid SQL injection
+        $stmtSelectFacultyName = mysqli_prepare($con, $query);
+
+        if (!$stmtSelectFacultyName) {
+            die("Error in preparing the select statement: " . mysqli_error($con));
         }
 
-        mysqli_stmt_store_result($stmt);
+        mysqli_stmt_bind_param($stmtSelectFacultyName, "i", $facultyId);
+
+        if (mysqli_stmt_execute($stmtSelectFacultyName)) {
+            $result = mysqli_stmt_get_result($stmtSelectFacultyName);
+
+            if ($result && mysqli_num_rows($result) > 0) {
+                $row = mysqli_fetch_assoc($result);
+                $faculty_name = $row['name'];
+            }
+        }
 
         // Check if the Seva coordinator is already assigned
-        $checkQuery = "SELECT * FROM seva_details WHERE `Seva Id` = $sevaId AND `Seva Coordinator` = $facultyId";
-        $result = mysqli_query($con, $checkQuery);
+        $checkQuery = "SELECT * FROM seva_details WHERE `Seva Id` = ? AND `Seva Coordinator` = ?";
 
-        if (mysqli_num_rows($result) == 0) {
+        // Use prepared statement to avoid SQL injection
+        $stmtCheckSevaCoordinator = mysqli_prepare($con, $checkQuery);
+
+        if (!$stmtCheckSevaCoordinator) {
+            die("Error in preparing the check query: " . mysqli_error($con));
+        }
+
+        mysqli_stmt_bind_param($stmtCheckSevaCoordinator, "ii", $sevaId, $facultyId);
+
+        mysqli_stmt_execute($stmtCheckSevaCoordinator);
+        $resultCheck = mysqli_stmt_get_result($stmtCheckSevaCoordinator);
+
+        if (mysqli_num_rows($resultCheck) == 0) {
             // Update the Seva coordinator in the seva_details table
-            $updateQuery = "UPDATE seva_details SET `Seva Coordinator` = ?, `Faculty ID` = ? WHERE `Seva Id` = ?";
-            $stmtUpdate = mysqli_prepare($con, $updateQuery);
+            $updateQuery = "UPDATE seva_details SET `Seva Coordinator` = ?, `EID` = ? WHERE `Seva Id` = ?";
 
-            if (!$stmtUpdate) {
+            // Use prepared statement to avoid SQL injection
+            $stmtUpdateSevaCoordinator = mysqli_prepare($con, $updateQuery);
+
+            if (!$stmtUpdateSevaCoordinator) {
                 die("Error in preparing the update statement: " . mysqli_error($con));
             }
 
-            mysqli_stmt_bind_param($stmtUpdate, "sii", $faculty_name, $facultyId, $sevaId);
+            mysqli_stmt_bind_param($stmtUpdateSevaCoordinator, "sii", $faculty_name, $facultyId, $sevaId);
 
-            if (mysqli_stmt_execute($stmtUpdate)) {
-                echo "Seva coordinator assigned successfully.";
+            if (mysqli_stmt_execute($stmtUpdateSevaCoordinator)) {
+                // Now, update the user_role to "seva_coordinator"
+                $updateUserRoleQuery = "UPDATE login SET user_type = 'seva_coordinator' WHERE EID = ?";
+
+                // Use prepared statement to avoid SQL injection
+                $stmtUpdateUserRole = mysqli_prepare($con, $updateUserRoleQuery);
+
+                if (!$stmtUpdateUserRole) {
+                    die("Error in preparing the user role update statement: " . mysqli_error($con));
+                }
+
+                mysqli_stmt_bind_param($stmtUpdateUserRole, "i", $facultyId);
+
+                if (mysqli_stmt_execute($stmtUpdateUserRole)) {
+                    echo "Seva coordinator assigned successfully.";
+                } else {
+                    echo "Error updating user role: " . mysqli_error($con);
+                }
+
+                mysqli_stmt_close($stmtUpdateUserRole);
             } else {
                 echo "Error assigning Seva coordinator: " . mysqli_error($con);
             }
 
-            mysqli_stmt_close($stmtUpdate);
+            mysqli_stmt_close($stmtUpdateSevaCoordinator);
             header("Location: main_coordinator.php");
             exit();
         }
     } elseif (isset($_POST["add_new_seva"])) {
         // Handle adding a new Seva code here
         $newSevaName = $_POST["new_seva_name"];
+        $newStartTime = $_POST["start_time"]; // Retrieve the selected start time
+        $newEndTime = $_POST["end_time"]; // Retrieve the selected end time
 
         // Check if the Seva name is not empty
-        if (!empty($newSevaName)) {
+        if (!empty($newSevaName) && !empty($newStartTime) && !empty($newEndTime)) {
             // Insert the new Seva into the database
-            $insertSevaQuery = "INSERT INTO seva_details (`Seva Name`) VALUES ('$newSevaName')";
+            $insertSevaQuery = "INSERT INTO seva_details (`Seva Name`, `StartTime`, `EndTime`) VALUES ('$newSevaName', '$newStartTime', '$newEndTime')";
             if (mysqli_query($con, $insertSevaQuery)) {
                 echo "New Seva added successfully.";
             } else {
                 echo "Error adding new Seva: " . mysqli_error($con);
             }
         } else {
-            echo "Seva name cannot be empty.";
+            echo "Seva name, start time, and end time cannot be empty.";
         }
         header("Location: main_coordinator.php");
         exit();
@@ -117,60 +160,121 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         header("Location: main_coordinator.php"); // Redirect to the main coordinator page
         exit();
+    } elseif (isset($_POST["assign_faculty"])) {
+        // Retrieve form data
+        $seva_id = $_POST["seva_id"];
+        $faculty_ids = $_POST["faculty"];
+
+        // Prepare an array to hold the faculty IDs
+        $unique_faculty_ids = array_unique($faculty_ids);
+
+        // Insert data into seva_assignments table for all selected faculty members in one query
+        $insertFacultyQuery = "INSERT INTO seva_assignments (`Seva Id`, `Faculty ID`) VALUES (?, ?)";
+        $stmtFaculty = mysqli_prepare($con, $insertFacultyQuery);
+
+        if (!$stmtFaculty) {
+            die("Error in preparing the faculty insert statement: " . mysqli_error($con));
+        }
+
+        // Bind parameters for the faculty assignment query
+        mysqli_stmt_bind_param($stmtFaculty, "ii", $seva_id, $faculty_id);
+
+        // Insert all selected faculty assignments in one query
+        foreach ($unique_faculty_ids as $faculty_id) {
+            if (!mysqli_stmt_execute($stmtFaculty)) {
+                die("Error in executing the faculty insert statement: " . mysqli_error($con));
+            }
+        }
+
+        mysqli_stmt_close($stmtFaculty);
+
+        echo "Faculty assignments have been successfully added.";
+
+        // Redirect back to the main coordinator page or any other appropriate location
+        header("Location: main_coordinator.php");
+        exit();
     } else {
         // Retrieve form data
         $seva_id = $_POST["seva_id"];
-        $start_time = $_POST["start_time"];
-        $end_time = $_POST["end_time"];
-        $sql = "SELECT `EID` FROM seva_details WHERE `Seva Id` = ?";
-        $stmtSelect = mysqli_prepare($con, $sql);
+        $student_ids = $_POST["students"];
 
-        if (!$stmtSelect) {
-            die("Error in preparing the select statement: " . mysqli_error($con));
+        // Prepare an array to hold the student IDs
+        $unique_student_ids = [];
+
+        // Extract unique student IDs and populate the $unique_student_ids array
+        foreach ($student_ids as $student) {
+            $parts = explode('|', $student);
+            $sid = $parts[1];
+            if (!in_array($sid, $unique_student_ids)) {
+                $unique_student_ids[] = $sid;
+            }
         }
 
-        mysqli_stmt_bind_param($stmtSelect, "i", $seva_id);
-        if (mysqli_stmt_execute($stmtSelect)) {
-            mysqli_stmt_bind_result($stmtSelect, $faculty_id);
-            mysqli_stmt_fetch($stmtSelect);
+        // Check if each student is already assigned to the Seva
+        $assignment_exists = false;
+        foreach ($unique_student_ids as $student_id) {
+            $checkQuery = "SELECT 1 FROM seva_assignments WHERE `Student ID` = ? AND `Seva Id` = ?";
+            $stmtCheckAssignment = mysqli_prepare($con, $checkQuery);
 
-            mysqli_stmt_close($stmtSelect);
-
-            $students = $_POST["students"];
-
-            // Prepare an array to hold the student IDs
-            $student_ids = [];
-
-            // Extract student IDs and populate the $student_ids array
-            foreach ($students as $student) {
-                $parts = explode('|', $student);
-                $sid = $parts[1];
-                $student_ids[] = $sid;
+            if (!$stmtCheckAssignment) {
+                die("Error in preparing the check statement: " . mysqli_error($con));
             }
 
+            mysqli_stmt_bind_param($stmtCheckAssignment, "ii", $student_id, $seva_id);
+
+            mysqli_stmt_execute($stmtCheckAssignment);
+            mysqli_stmt_store_result($stmtCheckAssignment);
+
+            if (mysqli_stmt_num_rows($stmtCheckAssignment) > 0) {
+                $assignment_exists = true;
+                mysqli_stmt_close($stmtCheckAssignment);
+                break; // Exit the loop if any assignment exists
+            }
+
+            mysqli_stmt_close($stmtCheckAssignment);
+        }
+
+        if (!$assignment_exists) {
             // Insert data into seva_assignments table for all students in one query
-            $insertStudentQuery = "INSERT INTO seva_assignments (`Student ID`, `Seva Id`, `Faculty ID`, `StartTime`, `EndTime`) VALUES (?, ?, ?, ?, ?)";
+            $insertStudentQuery = "INSERT INTO seva_assignments (`Student ID`, `Seva Id`, `Faculty ID`) VALUES (?, ?, ?)";
             $stmtStudent = mysqli_prepare($con, $insertStudentQuery);
 
             if (!$stmtStudent) {
                 die("Error in preparing the student insert statement: " . mysqli_error($con));
             }
 
-            // Bind parameters for the student assignment query
-            mysqli_stmt_bind_param($stmtStudent, "iiiss", $student_id, $seva_id, $faculty_id, $start_time, $end_time);
+            // Get the faculty ID from seva_details (You may need to modify this part)
+            $sql = "SELECT `EID` FROM seva_details WHERE `Seva Id` = ?";
+            $stmtSelect = mysqli_prepare($con, $sql);
 
-            // Insert all student assignments in one query
-            foreach ($student_ids as $student_id) {
-                if (!mysqli_stmt_execute($stmtStudent)) {
-                    die("Error in executing the student insert statement: " . mysqli_error($con));
-                }
+            if (!$stmtSelect) {
+                die("Error in preparing the select statement: " . mysqli_error($con));
             }
 
-            mysqli_stmt_close($stmtStudent);
+            mysqli_stmt_bind_param($stmtSelect, "i", $seva_id);
 
-            echo "Seva assignments have been successfully added.";
+            if (mysqli_stmt_execute($stmtSelect)) {
+                mysqli_stmt_bind_result($stmtSelect, $faculty_id);
+                mysqli_stmt_fetch($stmtSelect);
+                mysqli_stmt_close($stmtSelect);
+
+                // Bind parameters for the student assignment query
+                foreach ($unique_student_ids as $student_id) {
+                    mysqli_stmt_bind_param($stmtStudent, "iii", $student_id, $seva_id, $faculty_id);
+
+                    if (!mysqli_stmt_execute($stmtStudent)) {
+                        die("Error in executing the student insert statement: " . mysqli_error($con));
+                    }
+                }
+
+                mysqli_stmt_close($stmtStudent);
+
+                echo "Seva assignments have been successfully added.";
+            } else {
+                echo "Error in adding seva assignments: " . mysqli_error($con);
+            }
         } else {
-            echo "Error in adding seva assignments: " . mysqli_error($con);
+            echo "Error: One or more students are already assigned to this Seva.";
         }
 
         // Redirect back to the main coordinator page or any other appropriate location

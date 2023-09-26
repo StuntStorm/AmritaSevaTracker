@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 24, 2023 at 09:54 AM
+-- Generation Time: Sep 26, 2023 at 08:02 AM
 -- Server version: 10.4.28-MariaDB
 -- PHP Version: 8.2.4
 
@@ -59,7 +59,10 @@ CREATE TABLE `login` (
 --
 
 INSERT INTO `login` (`EID`, `name`, `password`, `department`, `email`, `contact`, `user_type`, `status`, `available`) VALUES
-(11, 'F1', NULL, 'D1', 'ak@am.students.amrita.edu', '001', 'faculty', 0, 0);
+(20, 'F1', NULL, 'D1', NULL, '001', 'seva_coordinator', 0, 0),
+(21, 'F2', NULL, 'D2', NULL, '002', 'faculty', 0, 0),
+(22, 'F3', NULL, 'D3', NULL, '003', 'faculty', 0, 0),
+(26, 'ETHANAEL KHARKONGOR', '$2y$10$8JmfIdmouFOAqGHd1JtrcuXdrA7gaq5NVsUvyUVZzIuP1X/OjsM5u', 'Computer Science', 'amscu3csc21024@am.students.amrita.edu', '9863872923', 'main_coordinator', 0, 0);
 
 -- --------------------------------------------------------
 
@@ -76,6 +79,35 @@ CREATE TABLE `seva_assignments` (
   `EndTime` time DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `seva_assignments`
+--
+
+INSERT INTO `seva_assignments` (`AssignmentID`, `Seva Id`, `Faculty ID`, `Student ID`, `StartTime`, `EndTime`) VALUES
+(62, 21, 20, 21, '12:00:00', '14:00:00'),
+(63, 21, 20, 22, '12:00:00', '14:00:00'),
+(64, 22, 20, 21, '12:15:00', '07:00:00'),
+(65, 23, NULL, 24, '18:30:00', '22:10:00');
+
+--
+-- Triggers `seva_assignments`
+--
+DELIMITER $$
+CREATE TRIGGER `assign_seva_start_time` BEFORE INSERT ON `seva_assignments` FOR EACH ROW BEGIN
+  DECLARE seva_start_time TIME;
+  DECLARE seva_end_time TIME;
+
+  SELECT StartTime, EndTime
+  INTO seva_start_time, seva_end_time
+  FROM seva_details
+  WHERE `Seva Id` = NEW.`Seva Id`;
+
+  SET NEW.StartTime = seva_start_time;
+  SET NEW.EndTime = seva_end_time;
+END
+$$
+DELIMITER ;
+
 -- --------------------------------------------------------
 
 --
@@ -86,15 +118,19 @@ CREATE TABLE `seva_details` (
   `Seva Id` int(11) NOT NULL,
   `Seva Name` varchar(255) NOT NULL,
   `Seva Coordinator` varchar(255) NOT NULL,
-  `EID` int(11) DEFAULT NULL
+  `EID` int(11) DEFAULT NULL,
+  `StartTime` time DEFAULT NULL,
+  `EndTime` time DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `seva_details`
 --
 
-INSERT INTO `seva_details` (`Seva Id`, `Seva Name`, `Seva Coordinator`, `EID`) VALUES
-(14, 'Seva 2', 'F1', 11);
+INSERT INTO `seva_details` (`Seva Id`, `Seva Name`, `Seva Coordinator`, `EID`, `StartTime`, `EndTime`) VALUES
+(21, 'Seva 1', 'ETHANAEL KHARKONGOR', 26, '12:00:00', '14:00:00'),
+(22, 'Seva 2', 'F1', 20, '12:15:00', '07:00:00'),
+(23, 'Seva 3', '', NULL, '18:30:00', '22:10:00');
 
 -- --------------------------------------------------------
 
@@ -111,26 +147,18 @@ CREATE TABLE `students` (
   `Semester` int(11) NOT NULL,
   `Batch` varchar(10) NOT NULL,
   `user_type` varchar(20) NOT NULL DEFAULT 'student',
-  `Password` varchar(255) DEFAULT NULL
+  `Password` varchar(255) DEFAULT NULL,
+  `status` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `students`
 --
 
-INSERT INTO `students` (`SID`, `Name`, `RollNumber`, `Email`, `Contact`, `Semester`, `Batch`, `user_type`, `Password`) VALUES
-(5, 'Mohan', '43', 'e', '5', 5, 'BCA', 'student', ''),
-(6, 'Rahul', '21', 'a', '2', 3, 'CSE', 'student', ''),
-(7, 'Rizwan', '45', 'sports', '3', 6, 'BCA', 'student', ''),
-(8, 'saddsdsd', '3', 'its in the game', '1', 2, 'MBA', 'student', ''),
-(13, 'Mohan', '63', 'e', '5', 5, 'BCA', 'student', ''),
-(14, 'Rahul', '12', 'a', '2', 3, 'CSE', 'student', ''),
-(15, 'Rizwan', '54', 'sports', '3', 6, 'BCA', 'student', ''),
-(16, 'saddsdsd', '30', 'its in the game', '1', 2, 'MBA', 'student', ''),
-(17, 'Zil', '15', 'ga', '14', 3, 'BBA', 'student', ''),
-(18, 'kel', '18', 'fa', '23', 4, 'ECE', 'student', ''),
-(19, 'dm', '91', 'iew', '1313', 1, 'LOC', 'student', ''),
-(20, 'new', '141', 'rw', '45', 5, 'REC', 'student', '');
+INSERT INTO `students` (`SID`, `Name`, `RollNumber`, `Email`, `Contact`, `Semester`, `Batch`, `user_type`, `Password`, `status`) VALUES
+(21, 'S1', '01', 'ak@am.students.amrita.edu', '001', 5, 'CSE', 'student', '$2y$10$8JmfIdmouFOAqGHd1JtrcuXdrA7gaq5NVsUvyUVZzIuP1X/OjsM5u', NULL),
+(22, 'S2', '02', '', '002', 4, 'BCA', 'student', NULL, NULL),
+(24, 'S3', '03', '', '1234', 4, 'BCA', 'student', NULL, NULL);
 
 --
 -- Indexes for dumped tables
@@ -185,25 +213,25 @@ ALTER TABLE `attendance_students`
 -- AUTO_INCREMENT for table `login`
 --
 ALTER TABLE `login`
-  MODIFY `EID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `EID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT for table `seva_assignments`
 --
 ALTER TABLE `seva_assignments`
-  MODIFY `AssignmentID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+  MODIFY `AssignmentID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=66;
 
 --
 -- AUTO_INCREMENT for table `seva_details`
 --
 ALTER TABLE `seva_details`
-  MODIFY `Seva Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `Seva Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT for table `students`
 --
 ALTER TABLE `students`
-  MODIFY `SID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `SID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- Constraints for dumped tables
@@ -221,6 +249,7 @@ ALTER TABLE `attendance_students`
 --
 ALTER TABLE `seva_assignments`
   ADD CONSTRAINT `fk_seva_assignments_login` FOREIGN KEY (`Faculty ID`) REFERENCES `login` (`EID`),
+  ADD CONSTRAINT `fk_seva_details` FOREIGN KEY (`Seva Id`) REFERENCES `seva_details` (`Seva Id`),
   ADD CONSTRAINT `fk_student` FOREIGN KEY (`Student ID`) REFERENCES `students` (`SID`),
   ADD CONSTRAINT `seva_assignments_ibfk_1` FOREIGN KEY (`Seva Id`) REFERENCES `seva_details` (`Seva Id`);
 COMMIT;

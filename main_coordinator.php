@@ -1,5 +1,14 @@
 <?php
 
+session_start();
+
+// Check if the user is not authenticated (not logged in)
+if (!isset($_SESSION['id'])) {
+    // Redirect to the login page or display an error message
+    header("Location: login.php");
+    exit();
+}
+
 $DATABASE_HOST = 'localhost';
 $DATABASE_USER = 'root';
 $DATABASE_PASS = '';
@@ -51,12 +60,14 @@ if (mysqli_connect_errno()) {
 <body>
     <div class="button-container">
         <button class="tab-button" onclick="openTab('seva')">View Seva</button>
-        <button class="tab-button" onclick="openTab('assign_seva_coordinator')">Add Seva and Assign Seva Coordinator</button>
+        <button class="tab-button" onclick="openTab('add_seva')">Add Seva</button>
+        <button class="tab-button" onclick="openTab('assign_seva_coordinator')">Assign Seva Coordinator</button>
         <button class="tab-button" onclick="openTab('faculty')">View Faculty</button>
         <button class="tab-button" onclick="openTab('add_faculty')">Add Faculty</button>
         <button class="tab-button" onclick="openTab('student')">View Students</button>
         <button class="tab-button" onclick="openTab('add_student')">Add Students</button>
         <button class="tab-button" onclick="openTab('assign')">Assign Students to Seva</button>
+        <button class="tab-button" onclick="openTab('assign_faculty')">Assign Faculty to Seva</button>
         <button class="tab-button" onclick="openTab('view_assigned_seva')">View Assigned</button>
         <button class="tab-button" onclick="window.location.href='upload.html'">Upload Students CSV</button>
 
@@ -68,32 +79,56 @@ if (mysqli_connect_errno()) {
             <tr>
                 <th>Seva Name</th>
                 <th>Seva Coordinator</th>
+                <th>StartTime</th>
+                <th>EndTime</th>
             </tr>
             <?php
             // PHP code to fetch and display seva details
-            $sql = "SELECT * FROM seva_details";
+            $sql = "SELECT `Seva Id`, `Seva Name`, `Seva Coordinator`, `StartTime`, `EndTime`
+            FROM seva_details";
             $result = mysqli_query($con, $sql);
 
             while ($row = mysqli_fetch_assoc($result)) {
                 echo "<tr>";
                 echo "<td>" . $row['Seva Name'] . "</td>";
                 echo "<td>" . $row['Seva Coordinator'] . "</td>";
+                echo "<td>" . $row['StartTime'] . "</td>";
+                echo "<td>" . $row['EndTime'] . "</td>";
                 echo "</tr>";
             }
             ?>
         </table>
     </div>
-    <div id="assign_seva_coordinator" class="tab">
+
+    <div id="add_seva" class="tab">
         <br>
-        <h3>Assign Seva Coordinator / Add New Seva</h3>
+        <h3>Add New Seva</h3>
         <form action="assign.php" method="post">
             <!-- Text field to add a new Seva -->
             <label for="new_seva_name">Add New Seva:</label>
             <input type="text" id="new_seva_name" name="new_seva_name">
             <br><br>
+            <!-- Text field to enter a new Shift -->
+            <label for="shift">Shift:</label>
+            <div id="shift">
+                <label for="start_time">Start Time:</label>
+                <input type="time" id="start_time" name="start_time">
+
+                <label for="end_time">End Time:</label>
+                <input type="time" id="end_time" name="end_time">
+            </div>
+            <br>
+
 
             <input type="submit" name="add_new_seva" value="Add New Seva">
             <br><br>
+        </form>
+    </div>
+
+    <div id="assign_seva_coordinator" class="tab">
+        <br>
+        <h3>Assign Seva Coordinator</h3>
+        <form action="assign.php" method="post">
             <!-- Dropdown to select the Seva -->
             <label for="seva_select">Select a Seva:</label>
             <select id="seva_select" name="seva_id">
@@ -224,31 +259,28 @@ if (mysqli_connect_errno()) {
     <div id="assign" class="tab">
         <br>
         <h3>Assign Tasks</h3>
-        <form action="attendance.php" method="post">
+        <form action="assign.php" method="post">
             <!-- Dropdown to select the seva/task -->
             <label for="seva_select">Select a Seva:</label>
             <select id="seva_select" name="seva_id">
                 <?php
-                // PHP code to fetch seva names and IDs from the database
-                $sql = "SELECT `Seva Id`, `Seva Name` FROM seva_details";
+                // PHP code to fetch seva names, IDs, and shifts from the database
+                $sql = "SELECT `Seva Id`, `Seva Name`, StartTime, EndTime FROM seva_details";
                 $result = mysqli_query($con, $sql);
 
                 while ($row = mysqli_fetch_assoc($result)) {
-                    echo "<option value='" . $row['Seva Id'] . "'>" . $row['Seva Name'] . "</option>";
+                    $sevaId = $row['Seva Id'];
+                    $sevaName = $row['Seva Name'];
+                    $startTime = $row['StartTime'];
+                    $endTime = $row['EndTime'];
+
+                    // Display Seva name along with shift in parentheses
+                    $sevaLabel = "$sevaName ($startTime - $endTime)";
+
+                    echo "<option value='$sevaId'>$sevaLabel</option>";
                 }
                 ?>
             </select>
-            <br>
-
-            <!-- Shift section -->
-            <label for="shift">Shift:</label>
-            <div id="shift">
-                <label for="start_time">Start Time:</label>
-                <input type="time" id="start_time" name="start_time" required>
-
-                <label for="end_time">End Time:</label>
-                <input type="time" id="end_time" name="end_time" required>
-            </div>
             <br>
 
             <div class="assignment-container">
@@ -282,6 +314,58 @@ if (mysqli_connect_errno()) {
             <input type="submit" value="Assign Tasks">
         </form>
     </div>
+
+    <div id="assign_faculty" class="tab">
+        <br>
+        <h3>Assign Faculty</h3>
+        <form action="assign.php" method="post">
+            <!-- Dropdown to select the seva/task -->
+            <label for="seva_select">Select a Seva:</label>
+            <select id="seva_select" name="seva_id">
+                <?php
+                // PHP code to fetch seva names, IDs, and shifts from the database
+                $sql = "SELECT `Seva Id`, `Seva Name`, StartTime, EndTime FROM seva_details";
+                $result = mysqli_query($con, $sql);
+
+                while ($row = mysqli_fetch_assoc($result)) {
+                    $sevaId = $row['Seva Id'];
+                    $sevaName = $row['Seva Name'];
+                    $startTime = $row['StartTime'];
+                    $endTime = $row['EndTime'];
+
+                    // Display Seva name along with shift in parentheses
+                    $sevaLabel = "$sevaName ($startTime - $endTime)";
+
+                    echo "<option value='$sevaId'>$sevaLabel</option>";
+                }
+                ?>
+            </select>
+            <br>
+
+            <!-- Section for assigning faculty as a list -->
+            <div class="assignment-container">
+                <ul>
+                    <?php
+                    // Fetch faculty members (adjust your SQL query as needed)
+                    $sql = "SELECT `EID`, `name` FROM `login`";
+                    $result = mysqli_query($con, $sql);
+
+                    while ($row = mysqli_fetch_assoc($result)) {
+                        $facultyId = $row['EID'];
+                        $facultyName = $row['name'];
+                        echo "<input type='checkbox' name='faculty[]' value='$facultyId'>$facultyName<br>";
+                    }
+                    ?>
+                </ul>
+            </div>
+            <br><br>
+
+            <!-- Submit button to assign tasks -->
+            <input type="submit" value="Assign Tasks">
+        </form>
+    </div>
+
+
 
     <div id="view_assigned_seva" class="tab">
         <br>
