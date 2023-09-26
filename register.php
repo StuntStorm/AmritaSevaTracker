@@ -14,25 +14,24 @@
     position: relative;">
 
 <!-------------------------------------->
-
-<?php session_start(); ?>
 <?php
-    include('connect/connection.php');
-    if (isset($_POST["register"])) {
-        $name = $_POST["name"];
-        $email = $_POST["email"];
-        $password = $_POST["password"];
-        $department = $_POST["department"];
-        $contact = $_POST["phone"];
+session_start();
+include('connect/connection.php');
 
-        $check_email_query = mysqli_query($connect, "SELECT * FROM login WHERE email ='$email'");
+if (isset($_POST["register"])) {
+    $name = $_POST["name"];
+    $email = $_POST["email"];
+    $password = $_POST["password"];
+    $department = $_POST["department"];
+    $contact = $_POST["phone"];
+
+    $check_email_query = mysqli_query($connect, "SELECT * FROM login WHERE email ='$email'");
     $emailRowCount = mysqli_num_rows($check_email_query);
 
     if ($emailRowCount > 0) {
         // If email exists, show the error message and stop further processing
         echo "<script>alert('The provided email already exists in our system.');</script>";
-    } else 
-    {
+    } else {
         // Check if the contact number already exists
         $check_contact_query = mysqli_query($connect, "SELECT * FROM login WHERE contact ='$contact'");
         $contactRowCount = mysqli_num_rows($check_contact_query);
@@ -44,10 +43,10 @@
                 $update_query = "UPDATE login SET email='$email', password='$password_hash', name='$name', department='$department' WHERE contact='$contact'";
                 mysqli_query($connect, $update_query);
             } else {
-                // Contact doesn't exist, so insert a new record
+                // Contact doesn't exist, so insert a new record in students table
                 $password_hash = password_hash($password, PASSWORD_BCRYPT);
-                $insert_query = "INSERT INTO login (email, password, status, name, department, contact) VALUES ('$email', '$password_hash', 0, '$name', '$department', '$contact')";
-                mysqli_query($connect, $insert_query);
+                $insert_student_query = "INSERT INTO login (name, email, password, department, contact) VALUES ('$name', '$email', '$password_hash', '$department', '$contact')";
+                mysqli_query($connect, $insert_student_query);
             }
 
             // Sending OTP for email verification remains the same
@@ -74,23 +73,24 @@
             $mail->Body = "<p>Dear user, </p> <h3>Your verify OTP code is $otp <br></h3><br><br><p>With regards,</p><b>Amrita Seva Tracking Team</b>";
 
             if (!$mail->send()) {
-    ?>
+                ?>
                 <script>
                     alert("Register Failed, Invalid Email");
                 </script>
-            <?php
+                <?php
             } else {
-            ?>
+                ?>
                 <script>
-                    alert("Register Successfully, OTP sent to " + <?php echo $email ?>);
+                    alert("Register Successfully, OTP sent to <?php echo $email ?>");
                     window.location.replace('verification.php');
                 </script>
-    <?php
+                <?php
             }
         }
-      }
     }
-    ?>
+}
+?>
+
 
 <!-------------------------------------->
 
