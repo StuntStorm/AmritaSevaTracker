@@ -47,8 +47,10 @@ if (mysqli_connect_errno()) {
     <div class="button-container">
         <button class="tab-button" onclick="openTab('seva')">View Seva</button>
         <button class="tab-button" onclick="openTab('student')">View Students</button>
+        <button class="tab-button" onclick="openTab('batch_info')">Batch Info</button>
         <button class="tab-button" onclick="openTab('add_student')">Add Students</button>
-        <button class="tab-button" onclick="openTab('attendance')">Mark Attendance</button>
+        <button class="tab-button" onclick="openTab('mark_attendance')">Mark Attendance</button>
+        <button class="tab-button" onclick="openTab('view_attendance')">View Attendance</button>
         <button class="tab-button" onclick="openTab('assign')">Assign Students to Seva</button>
         <button class="tab-button" onclick="openTab('view_assigned_seva')">View Student Assigned</button>
         <button class="tab-button" onclick="openTab('view_assigned_seva_faculty')">View Faculty Assigned</button>
@@ -58,29 +60,29 @@ if (mysqli_connect_errno()) {
     <div id="seva" class="tab" style="display: block;">
         <br>
         <h3>Seva Details</h3>
-<table>
-    <tr>
-        <th>Seva Name</th>
-        <th>Seva Coordinator</th>
-        <th>Contact</th>
-    </tr>
-    <?php
-    // PHP code to fetch and display seva details with contact information
-    $sql = "SELECT sd.`Seva Name`, sd.`Seva Coordinator`, l.`Contact`
+        <table>
+            <tr>
+                <th>Seva Name</th>
+                <th>Seva Coordinator</th>
+                <th>Contact</th>
+            </tr>
+            <?php
+            // PHP code to fetch and display seva details with contact information
+            $sql = "SELECT sd.`Seva Name`, sd.`Seva Coordinator`, l.`Contact`
             FROM seva_details sd
             LEFT JOIN login l ON sd.`EID` = l.`EID`"; // Assuming `EID` is the common field
 
-    $result = mysqli_query($con, $sql);
+            $result = mysqli_query($con, $sql);
 
-    while ($row = mysqli_fetch_assoc($result)) {
-        echo "<tr>";
-        echo "<td>" . $row['Seva Name'] . "</td>";
-        echo "<td>" . $row['Seva Coordinator'] . "</td>";
-        echo "<td>" . $row['Contact'] . "</td>";
-        echo "</tr>";
-    }
-    ?>
-</table>
+            while ($row = mysqli_fetch_assoc($result)) {
+                echo "<tr>";
+                echo "<td>" . $row['Seva Name'] . "</td>";
+                echo "<td>" . $row['Seva Coordinator'] . "</td>";
+                echo "<td>" . $row['Contact'] . "</td>";
+                echo "</tr>";
+            }
+            ?>
+        </table>
 
     </div>
 
@@ -115,56 +117,96 @@ if (mysqli_connect_errno()) {
         </table>
     </div>
 
-    <div id="attendance" class="tab">
+    <div id="batch_info" class="tab">
+        <br>
+        <h3>Batch Info</h3>
+
+        <!-- Dropdown to select the Batch + Semester for filtering students -->
+        <label for="batch_semester_select">Select Batch:</label>
+        <select id="batch_semester_select" name="batch_semester">
+            <?php
+            // PHP code to fetch unique Batch + Semester combinations from the database
+            $sql = "SELECT DISTINCT CONCAT(`batch`, ' ', `semester`) AS batch_semester FROM students";
+            $result = mysqli_query($con, $sql);
+
+            while ($row = mysqli_fetch_assoc($result)) {
+                echo "<option value='" . $row['batch_semester'] . "'>" . $row['batch_semester'] . "</option>";
+            }
+            ?>
+        </select>
+        <button id="fetch_student_details_button" class="tab-button">Fetch Student Details</button>
+        <br><br>
+
+        <!-- Container to display students -->
+        <div id="student_details_container"></div>
+    </div>
+
+    <div id="mark_attendance" class="tab">
         <br>
         <h3>Mark Attendance</h3>
-        <form action="mark_attendance.php" method="post">
+        <form action="mark_attendance.php" method="POST">
             <!-- Dropdown to select the seva/task -->
-            <label for="seva_select_attendance">Select a Seva:</label>
-            <select id="seva_select_attendance" name="seva_id">
+            <label for="seva_select">Select a Seva:</label>
+            <select id="seva_select" name="seva_id">
                 <?php
-                // PHP code to fetch seva names and IDs from the database
-                $sql = "SELECT `Seva Id`, `Seva Name` FROM seva_details";
+                // PHP code to fetch seva names, IDs, and shifts from the database
+                $sql = "SELECT `Seva Id`, `Seva Name`, StartTime, EndTime FROM seva_details";
                 $result = mysqli_query($con, $sql);
 
                 while ($row = mysqli_fetch_assoc($result)) {
-                    echo "<option value='" . $row['Seva Id'] . "'>" . $row['Seva Name'] . "</option>";
+                    $sevaId = $row['Seva Id'];
+                    $sevaName = $row['Seva Name'];
+                    $startTime = $row['StartTime'];
+                    $endTime = $row['EndTime'];
+
+                    // Display Seva name along with shift in parentheses
+                    $sevaLabel = "$sevaName ($startTime - $endTime)";
+
+                    echo "<option value='$sevaId'>$sevaLabel</option>";
                 }
                 ?>
             </select>
             <br>
 
-            <!-- Dropdown to select the shift -->
-            <label for="shift_select">Select a Shift:</label>
-            <select id="shift_select" name="shift">
-                <?php
-                // PHP code to fetch distinct shifts from seva_assignments table
-                $sql = "SELECT DISTINCT StartTime, EndTime FROM seva_assignments";
-                $result = mysqli_query($con, $sql);
+            <label for="attendance_date">Attendance Date:</label>
+            <input type="date" id="attendance_date" name="attendance_date" required><br><br>
 
-                while ($row = mysqli_fetch_assoc($result)) {
-                    $start_time = $row['StartTime'];
-                    $end_time = $row['EndTime'];
-                    echo "<option value='$start_time|$end_time'>$start_time to $end_time</option>";
-                }
-                ?>
-            </select>
-            <br><br>
-
-
-            <!-- List of students for attendance -->
-            <div class="attendance-container">
-                <!-- This hidden input field will hold the selected student IDs -->
-                <input type="hidden" name="students" id="students-input" value="">
-            </div>
-
-
-
-            <!-- Submit button to mark attendance -->
-            <input type="submit" value="Mark Attendance">
+            <input type="submit" value="Go Mark">
         </form>
     </div>
 
+    <div id="view_attendance" class="tab">
+        <br>
+        <h3>View Attendance</h3>
+        <!-- Dropdown to select the seva/task -->
+        <label for="seva_select_view">Select a Seva:</label>
+        <select id="seva_select_view" name="seva_id">
+            <?php
+            // PHP code to fetch seva names, IDs, and shifts from the database
+            $sql = "SELECT `Seva Id`, `Seva Name`, StartTime, EndTime FROM seva_details";
+            $result = mysqli_query($con, $sql);
+
+            while ($row = mysqli_fetch_assoc($result)) {
+                $sevaId = $row['Seva Id'];
+                $sevaName = $row['Seva Name'];
+                $startTime = $row['StartTime'];
+                $endTime = $row['EndTime'];
+
+                // Display Seva name along with shift in parentheses
+                $sevaLabel = "$sevaName ($startTime - $endTime)";
+
+                echo "<option value='$sevaId'>$sevaLabel</option>";
+            }
+            ?>
+        </select>
+        <br>
+
+        <label for="attendance_date_view">Attendance Date:</label>
+        <input type="date" id="attendance_date_view" name="attendance_date" required><br><br>
+
+        <input type="submit" value="View Attendance" id="view_attendance_button">
+        <div id="attendance_result"></div> <!-- Display attendance here -->
+    </div>
 
     <div id="add_student" class="tab">
         <br>
@@ -246,72 +288,72 @@ if (mysqli_connect_errno()) {
     </div>
 
     <div id="view_assigned_seva_faculty" class="tab">
-    <br>
-    <h3>View Faculty Assigned Seva</h3>
-    <table>
-    <tr>
-        <th>Seva ID</th>
-        <th>Seva Name</th>
-        <th>Assigned Faculty</th>
-        <th>Faculty Contact</th>
-        <th>Start Time</th>
-        <th>End Time</th>
-    </tr>
-    <?php
-    // PHP code to fetch and display assigned Faculty for Seva
-    $sql = "SELECT faculty_assignment.SevaId, seva_details.`Seva Name`, login.name AS Assigned_Faculty,
+        <br>
+        <h3>View Faculty Assigned Seva</h3>
+        <table>
+            <tr>
+                <th>Seva ID</th>
+                <th>Seva Name</th>
+                <th>Assigned Faculty</th>
+                <th>Faculty Contact</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+            </tr>
+            <?php
+            // PHP code to fetch and display assigned Faculty for Seva
+            $sql = "SELECT faculty_assignment.SevaId, seva_details.`Seva Name`, login.name AS Assigned_Faculty,
         login.contact AS Faculty_Contact, faculty_assignment.StartTime, faculty_assignment.EndTime
     FROM faculty_assignment
     LEFT JOIN seva_details ON faculty_assignment.SevaId = seva_details.`Seva Id`
     LEFT JOIN login ON faculty_assignment.FacultyId = login.EID
     GROUP BY faculty_assignment.SevaId, seva_details.`Seva Name`, login.name,
         login.contact, faculty_assignment.StartTime, faculty_assignment.EndTime"; // Group by Seva ID, Faculty Name, and Faculty Contact
-    $result = mysqli_query($con, $sql);
+            $result = mysqli_query($con, $sql);
 
-    while ($row = mysqli_fetch_assoc($result)) {
-        echo "<tr>";
-        echo "<td>" . $row['SevaId'] . "</td>";
-        echo "<td>" . $row['Seva Name'] . "</td>";
-        echo "<td>" . $row['Assigned_Faculty'] . "</td>";
-        echo "<td>" . $row['Faculty_Contact'] . "</td>";
-        echo "<td>" . $row['StartTime'] . "</td>";
-        echo "<td>" . $row['EndTime'] . "</td>";
-        echo "</tr>";
-    }
-    ?>
-</table>
+            while ($row = mysqli_fetch_assoc($result)) {
+                echo "<tr>";
+                echo "<td>" . $row['SevaId'] . "</td>";
+                echo "<td>" . $row['Seva Name'] . "</td>";
+                echo "<td>" . $row['Assigned_Faculty'] . "</td>";
+                echo "<td>" . $row['Faculty_Contact'] . "</td>";
+                echo "<td>" . $row['StartTime'] . "</td>";
+                echo "<td>" . $row['EndTime'] . "</td>";
+                echo "</tr>";
+            }
+            ?>
+        </table>
     </div>
     <div id="view_assigned_seva" class="tab">
-    <br>
-    <h3>View Assigned Seva</h3>
-    <table>
-        <tr>
-            <th>Seva Name</th>
-            <th>Assigned Students</th>
-            <th>Start Time</th>
-            <th>End Time</th>
-        </tr>
-        <?php
-        // PHP code to fetch and display assigned Seva tasks without considering Faculty ID
-        $sql = "SELECT seva_details.`Seva Name`, GROUP_CONCAT(students.Name) AS Assigned_Students,
+        <br>
+        <h3>View Assigned Seva</h3>
+        <table>
+            <tr>
+                <th>Seva Name</th>
+                <th>Assigned Students</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+            </tr>
+            <?php
+            // PHP code to fetch and display assigned Seva tasks without considering Faculty ID
+            $sql = "SELECT seva_details.`Seva Name`, GROUP_CONCAT(students.Name) AS Assigned_Students,
             seva_assignments.`StartTime`, seva_assignments.`EndTime`
         FROM seva_assignments
         LEFT JOIN seva_details ON seva_assignments.`Seva Id` = seva_details.`Seva Id`
         LEFT JOIN students ON seva_assignments.`Student ID` = students.SID
         GROUP BY seva_details.`Seva Id`"; // Group by Seva Id only
-        $result = mysqli_query($con, $sql);
+            $result = mysqli_query($con, $sql);
 
-        while ($row = mysqli_fetch_assoc($result)) {
-            echo "<tr>";
-            echo "<td>" . $row['Seva Name'] . "</td>";
-            echo "<td>" . $row['Assigned_Students'] . "</td>";
-            echo "<td>" . $row['StartTime'] . "</td>";
-            echo "<td>" . $row['EndTime'] . "</td>";
-            echo "</tr>";
-        }
-        ?>
-    </table>
-</div>
+            while ($row = mysqli_fetch_assoc($result)) {
+                echo "<tr>";
+                echo "<td>" . $row['Seva Name'] . "</td>";
+                echo "<td>" . $row['Assigned_Students'] . "</td>";
+                echo "<td>" . $row['StartTime'] . "</td>";
+                echo "<td>" . $row['EndTime'] . "</td>";
+                echo "</tr>";
+            }
+            ?>
+        </table>
+    </div>
 
 
     <!-- Add the Profile tab content here -->
@@ -375,59 +417,87 @@ if (mysqli_connect_errno()) {
                 });
             });
         });
-        // Initialize an array to store selected student IDs
-        var selectedStudentIDs = [];
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add an event listener to the "View Attendance" button
+            document.querySelector('#view_attendance_button').addEventListener('click', function() {
+                const sevaId = document.querySelector('#seva_select_view').value;
+                const attendanceDate = document.querySelector('#attendance_date_view').value;
+                const attendanceResultDiv = document.querySelector('#attendance_result');
 
-        document.getElementById('seva_select_attendance').addEventListener('change', function() {
-            var sevaId = this.value; // Get the selected Seva ID
-            var studentsContainer = document.querySelector('.attendance-container');
+                // Make an AJAX request to fetch attendance data
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', 'view_attendance.php', true);
+                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4 && xhr.status === 200) {
+                        const attendanceData = JSON.parse(xhr.responseText);
 
-            // Clear the existing student list and reset the selectedStudentIDs array
-            studentsContainer.innerHTML = '';
-            selectedStudentIDs = [];
+                        // Create and populate the table
+                        let tableHtml = '';
+                        tableHtml += '<table border="1" style="border-collapse:collapse">';
+                        tableHtml += '<tr><th>Student Name</th><th>Roll Number</th><th>Semester</th><th>Batch</th><th>Attendance</th></tr>';
 
-            // Fetch students who are part of the selected Seva using AJAX
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', 'fetch_students.php?seva_id=' + sevaId, true);
+                        for (const entry of attendanceData) {
+                            tableHtml += `<tr><td>${entry.student_name}</td><td>${entry.roll_number}</td><td>${entry.semester}</td><td>${entry.batch}</td><td>${entry.is_present}</td></tr>`;
+                        }
 
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    var students = JSON.parse(xhr.responseText);
+                        tableHtml += '</table>';
 
-                    // Populate the list of students
-                    students.forEach(function(student) {
-                        var studentCheckbox = document.createElement('input');
-                        studentCheckbox.type = 'checkbox';
-                        studentCheckbox.name = 'students[]';
-                        studentCheckbox.value = student.SID;
+                        // Update the attendance result div with the table
+                        attendanceResultDiv.innerHTML = tableHtml;
+                    }
+                };
 
-                        // Add an event listener to track when a student is selected
-                        studentCheckbox.addEventListener('change', function() {
-                            if (this.checked) {
-                                // If checkbox is checked, add student ID to the selectedStudentIDs array
-                                selectedStudentIDs.push(student.SID);
-                            } else {
-                                // If checkbox is unchecked, remove student ID from the array
-                                var index = selectedStudentIDs.indexOf(student.SID);
-                                if (index !== -1) {
-                                    selectedStudentIDs.splice(index, 1);
-                                }
-                            }
+                // Send the POST request with seva_id and attendance_date
+                xhr.send(`seva_id=${sevaId}&attendance_date=${attendanceDate}`);
+            });
+            document.querySelector('#fetch_student_details_button').addEventListener('click', function() {
+                const batchSemester = document.querySelector('#batch_semester_select').value;
+                const studentDetailsContainer = document.querySelector('#student_details_container');
+                // Clear the existing student details
+                studentDetailsContainer.innerHTML = '';
 
-                            // Update the hidden input field with selected student IDs
-                            document.getElementById('students-input').value = JSON.stringify(selectedStudentIDs);
-                        });
+                // Make an AJAX request to fetch student details
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', 'fetch_student_details.php', true);
+                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
-                        var studentLabel = document.createElement('label');
-                        studentLabel.appendChild(studentCheckbox);
-                        studentLabel.appendChild(document.createTextNode(student.Name + ' (' + student.RollNumber + ')'));
+                // Add event listeners to handle the response
+                xhr.addEventListener('load', function() {
+                    if (xhr.status === 200) {
+                        const studentDetails = JSON.parse(xhr.responseText);
+                        // Create and populate the table
+                        let tableHtml = '';
+                        tableHtml += '<table border="1" style="border-collapse:collapse">';
+                        tableHtml += '<tr><th>Student Name</th><th>Roll Number</th><th>Seva</th></tr>';
 
-                        studentsContainer.appendChild(studentLabel);
-                    });
-                }
-            };
+                        for (const entry of studentDetails) {
+                            tableHtml += `<tr><td>${entry.student_name}</td><td>${entry.roll_number}</td><td>${entry.seva_name}</td></tr>`;
+                        }
 
-            xhr.send();
+                        tableHtml += '</table>';
+
+                        // Update the student details container with the table
+                        studentDetailsContainer.innerHTML = tableHtml;
+                    } else {
+                        // Handle HTTP error (e.g., 404, 500)
+                        console.error('HTTP Error:', xhr.status, xhr.statusText);
+                    }
+                });
+
+                xhr.addEventListener('error', function() {
+                    // Handle network or other errors
+                    console.error('Network Error');
+                });
+
+                xhr.addEventListener('abort', function() {
+                    // Handle request abort (if needed)
+                    console.warn('Request Aborted');
+                });
+
+                // Send the POST request with batch_semester
+                xhr.send(`batch_semester=${batchSemester}`);
+            });
         });
     </script>
 </body>

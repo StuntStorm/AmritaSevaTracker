@@ -20,7 +20,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $seva_row = mysqli_fetch_assoc($seva_result);
 
     // Fetch the attendance data for the selected Seva, date, and shift
-    $attendance_query = "SELECT a.`student_id`, s.`Name`, a.`is_present`
+    $attendance_query = "SELECT a.`student_id`, s.`Name`, s.`semester`, s.`batch`, a.`is_present`
                          FROM attendance_students a
                          JOIN students s ON a.`student_id` = s.`SID`
                          WHERE a.`seva_id` = $seva_id
@@ -32,10 +32,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         while ($attendance_row = mysqli_fetch_assoc($attendance_result)) {
             $student_name = $attendance_row['Name'];
+            $semester = $attendance_row['semester'];
+            $batch = $attendance_row['batch'];
             $is_present = $attendance_row['is_present'] ? 'Present' : 'Absent';
 
             $attendance_data[] = array(
                 'student_name' => $student_name,
+                'semester' => $semester,
+                'batch' => $batch,
                 'is_present' => $is_present
             );
         }

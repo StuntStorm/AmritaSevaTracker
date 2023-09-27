@@ -27,24 +27,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($stmt_login->fetch() && password_verify($password, $hashed_password)) {
         // Password is correct
         $_SESSION['id'] = $user_id; // Set the user's ID in the session
-
+        $_SESSION['user_type'] = $user_type;
         // Echo the user_type instead of 'success'
         echo $user_type;
 
         $stmt_login->close();
     } else {
         // If the user is not found in the login table, check the students table
-        $stmt_students = $con->prepare('SELECT SID, password FROM students WHERE Email = ?');
+        $stmt_students = $con->prepare('SELECT SID, password, user_type FROM students WHERE Email = ?');
         $stmt_students->bind_param('s', $email);
         $stmt_students->execute();
 
         // Bind the StudentID and password
-        $stmt_students->bind_result($student_id, $student_password);
+        $stmt_students->bind_result($student_id, $student_password, $user_type);
 
         // Check if the user is found in the students table
         if ($stmt_students->fetch() && password_verify($password, $student_password)) {
             // Password is correct
             $_SESSION['id'] = $student_id; // Set the student's ID in the session
+            $_SESSION['user_type'] = $user_type;
             echo 'student'; // Indicate that it's a student
 
             $stmt_students->close();

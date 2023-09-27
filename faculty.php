@@ -46,6 +46,7 @@ if (mysqli_connect_errno()) {
 <body>
     <div class="button-container">
         <button class="tab-button" onclick="openTab('student')">Student</button>
+        <button class="tab-button" onclick="openTab('batch_info')">Batch Info</button>
         <button class="tab-button" onclick="openTab('mark_attendance')">Mark Attendance</button>
         <button class="tab-button" onclick="openTab('view_attendance')">View Attendance</button>
         <button class="tab-button" onclick="openTab('view_assigned_seva')">View Assigned</button>
@@ -77,6 +78,29 @@ if (mysqli_connect_errno()) {
         <div id="students_container"></div>
     </div>
 
+    <div id="batch_info" class="tab">
+        <br>
+        <h3>Batch Info</h3>
+
+        <!-- Dropdown to select the Batch + Semester for filtering students -->
+        <label for="batch_semester_select">Select Batch:</label>
+        <select id="batch_semester_select" name="batch_semester">
+            <?php
+            // PHP code to fetch unique Batch + Semester combinations from the database
+            $sql = "SELECT DISTINCT CONCAT(`batch`, ' ', `semester`) AS batch_semester FROM students";
+            $result = mysqli_query($con, $sql);
+
+            while ($row = mysqli_fetch_assoc($result)) {
+                echo "<option value='" . $row['batch_semester'] . "'>" . $row['batch_semester'] . "</option>";
+            }
+            ?>
+        </select>
+        <button id="fetch_student_details_button" class="tab-button">Fetch Student Details</button>
+        <br><br>
+
+        <!-- Container to display students -->
+        <div id="student_details_container"></div>
+    </div>
 
 
     <div id="mark_attendance" class="tab">
@@ -147,36 +171,36 @@ if (mysqli_connect_errno()) {
     </div>
 
     <div id="view_assigned_seva" class="tab">
-    <br>
-    <h3>View Assigned Seva</h3>
-    <table>
-        <tr>
-            <th>Seva Name</th>
-            <th>Assigned Students</th>
-            <th>Start Time</th>
-            <th>End Time</th>
-        </tr>
-        <?php
-        // PHP code to fetch and display assigned Seva tasks without considering Faculty ID
-        $sql = "SELECT seva_details.`Seva Name`, GROUP_CONCAT(students.Name) AS Assigned_Students,
+        <br>
+        <h3>View Assigned Seva</h3>
+        <table>
+            <tr>
+                <th>Seva Name</th>
+                <th>Assigned Students</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+            </tr>
+            <?php
+            // PHP code to fetch and display assigned Seva tasks without considering Faculty ID
+            $sql = "SELECT seva_details.`Seva Name`, GROUP_CONCAT(students.Name) AS Assigned_Students,
             seva_assignments.`StartTime`, seva_assignments.`EndTime`
         FROM seva_assignments
         LEFT JOIN seva_details ON seva_assignments.`Seva Id` = seva_details.`Seva Id`
         LEFT JOIN students ON seva_assignments.`Student ID` = students.SID
         GROUP BY seva_details.`Seva Id`"; // Group by Seva Id only
-        $result = mysqli_query($con, $sql);
+            $result = mysqli_query($con, $sql);
 
-        while ($row = mysqli_fetch_assoc($result)) {
-            echo "<tr>";
-            echo "<td>" . $row['Seva Name'] . "</td>";
-            echo "<td>" . $row['Assigned_Students'] . "</td>";
-            echo "<td>" . $row['StartTime'] . "</td>";
-            echo "<td>" . $row['EndTime'] . "</td>";
-            echo "</tr>";
-        }
-        ?>
-    </table>
-</div>
+            while ($row = mysqli_fetch_assoc($result)) {
+                echo "<tr>";
+                echo "<td>" . $row['Seva Name'] . "</td>";
+                echo "<td>" . $row['Assigned_Students'] . "</td>";
+                echo "<td>" . $row['StartTime'] . "</td>";
+                echo "<td>" . $row['EndTime'] . "</td>";
+                echo "</tr>";
+            }
+            ?>
+        </table>
+    </div>
 
     <div id="profile" class="tab" style="display: block;">
         <br>
@@ -249,10 +273,10 @@ if (mysqli_connect_errno()) {
                         // Create and populate the table
                         let tableHtml = '';
                         tableHtml += '<table border="1" style="border-collapse:collapse">';
-                        tableHtml += '<tr><th>Student Name</th><th>Attendance</th></tr>';
+                        tableHtml += '<tr><th>Student Name</th><th>Roll Number</th><th>Semester</th><th>Batch</th><th>Attendance</th></tr>';
 
                         for (const entry of attendanceData) {
-                            tableHtml += `<tr><td>${entry.student_name}</td><td>${entry.is_present}</td></tr>`;
+                            tableHtml += `<tr><td>${entry.student_name}</td><td>${entry.roll_number}</td><td>${entry.semester}</td><td>${entry.batch}</td><td>${entry.is_present}</td></tr>`;
                         }
 
                         tableHtml += '</table>';
@@ -265,6 +289,7 @@ if (mysqli_connect_errno()) {
                 // Send the POST request with seva_id and attendance_date
                 xhr.send(`seva_id=${sevaId}&attendance_date=${attendanceDate}`);
             });
+
             document.getElementById('fetch_students_button').addEventListener('click', function() {
                 var sevaId = document.getElementById('seva_select_students').value;
                 var studentsContainer = document.getElementById('students_container');
@@ -325,6 +350,54 @@ if (mysqli_connect_errno()) {
                 };
 
                 xhr.send();
+            });
+
+            document.querySelector('#fetch_student_details_button').addEventListener('click', function() {
+                const batchSemester = document.querySelector('#batch_semester_select').value;
+                const studentDetailsContainer = document.querySelector('#student_details_container');
+                // Clear the existing student details
+                studentDetailsContainer.innerHTML = '';
+
+                // Make an AJAX request to fetch student details
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', 'fetch_student_details.php', true);
+                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+                // Add event listeners to handle the response
+                xhr.addEventListener('load', function() {
+                    if (xhr.status === 200) {
+                        const studentDetails = JSON.parse(xhr.responseText);
+                        // Create and populate the table
+                        let tableHtml = '';
+                        tableHtml += '<table border="1" style="border-collapse:collapse">';
+                        tableHtml += '<tr><th>Student Name</th><th>Roll Number</th><th>Seva</th></tr>';
+
+                        for (const entry of studentDetails) {
+                            tableHtml += `<tr><td>${entry.student_name}</td><td>${entry.roll_number}</td><td>${entry.seva_name}</td></tr>`;
+                        }
+
+                        tableHtml += '</table>';
+
+                        // Update the student details container with the table
+                        studentDetailsContainer.innerHTML = tableHtml;
+                    } else {
+                        // Handle HTTP error (e.g., 404, 500)
+                        console.error('HTTP Error:', xhr.status, xhr.statusText);
+                    }
+                });
+
+                xhr.addEventListener('error', function() {
+                    // Handle network or other errors
+                    console.error('Network Error');
+                });
+
+                xhr.addEventListener('abort', function() {
+                    // Handle request abort (if needed)
+                    console.warn('Request Aborted');
+                });
+
+                // Send the POST request with batch_semester
+                xhr.send(`batch_semester=${batchSemester}`);
             });
         });
     </script>

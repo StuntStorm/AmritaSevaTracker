@@ -1,4 +1,14 @@
 <?php
+
+session_start();
+
+// Check if the user is not authenticated (not logged in)
+if (!isset($_SESSION['id'])) {
+    // Redirect to the login page or display an error message
+    header("Location: login.php");
+    exit();
+}
+
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -75,9 +85,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             // Close the statement
             mysqli_stmt_close($student_stmt);
 
-            // Display a success message and redirect
-            echo "<script>alert('Attendance updated successfully.'); setTimeout(function() { window.location.href = 'faculty.php'; }, 1000);</script>";
+            // Display a success message
+            echo "<script>alert('Attendance updated successfully.');</script>";
+
+            // Redirect to the previous page
+            if ($_SESSION['user_type'] == 'faculty') {
+                // Redirect students to a specific page
+                $redirect_url = 'faculty.php'; // Change this to the appropriate page
+            } elseif ($_SESSION['user_type'] == 'seva_coordinator') {
+                // Redirect admins to a different page
+                $redirect_url = 'seva_coordinator.php'; // Change this to the appropriate page
+            }
+    
+            header("Location: $redirect_url");
+            exit();
         }
     }
 }
-?>
