@@ -115,6 +115,7 @@ if (mysqli_connect_errno()) {
             }
             ?>
         </table>
+        
     </div>
 
     <div id="batch_info" class="tab">
@@ -135,6 +136,7 @@ if (mysqli_connect_errno()) {
             ?>
         </select>
         <button id="fetch_student_details_button" class="tab-button">Fetch Student Details</button>
+        <button type="button" class="tab-button" onclick="exportBatchInfoTableToCSV()">Export Batch Info Data to CSV</button>
         <br><br>
 
         <!-- Container to display students -->
@@ -205,6 +207,7 @@ if (mysqli_connect_errno()) {
         <input type="date" id="attendance_date_view" name="attendance_date" required><br><br>
 
         <input type="submit" value="View Attendance" id="view_attendance_button">
+        <button type="button" class="tab-button" onclick="exportViewAttendanceTableToCSV()">Export View Attendance Data to CSV</button>
         <div id="attendance_result"></div> <!-- Display attendance here -->
     </div>
 
@@ -500,4 +503,104 @@ if (mysqli_connect_errno()) {
             });
         });
     </script>
+    <script>
+        // Function to export the student table to CSV
+        function exportStudentTableToCSV() {
+            // Get the table data from the students_container div
+            const table = document.getElementById("students_container").querySelector("table");
+
+            // Extract the table rows
+            const rows = table.querySelectorAll("tr");
+
+            // Initialize a CSV string with headers
+            let csv = "Name, Roll No, Semester, Batch\n";
+
+            // Loop through rows and extract data
+            for (let i = 1; i < rows.length; i++) { // Start from 1 to skip the header row
+                const columns = rows[i].querySelectorAll("td");
+                const name = columns[0].textContent;
+                const rollNo = columns[1].textContent;
+                const semester = columns[2].textContent;
+                const batch = columns[3].textContent;
+                csv += `${name}, ${rollNo}, ${semester}, ${batch}\n`;
+            }
+
+            // Create a Blob with the CSV data
+            const blob = new Blob([csv], { type: 'text/csv' });
+
+            // Create a link to download the CSV file
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "student_data.csv";
+
+            // Trigger the download
+            link.click();
+        }
+
+        // Function to export the batch info table to CSV
+        function exportBatchInfoTableToCSV() {
+            // Get the table data from the student_details_container div
+            const table = document.getElementById("student_details_container").querySelector("table");
+
+            // Extract the table rows
+            const rows = table.querySelectorAll("tr");
+
+            // Initialize a CSV string with headers
+            let csv = "Batch Name, Roll Number, Seva\n";
+
+            // Loop through rows and extract data
+            for (let i = 1; i < rows.length; i++) { // Start from 1 to skip the header row
+                const columns = rows[i].querySelectorAll("td");
+                const batchName = columns[0].textContent;
+                const rollno = columns[1].textContent;
+                const seva = columns[2].textContent;
+                csv += `${batchName}, ${rollno}, ${seva}\n`;
+            }
+
+            // Create a Blob with the CSV data
+            const blob = new Blob([csv], { type: 'text/csv' });
+
+            // Create a link to download the CSV file
+            const links = document.createElement("a");
+            links.href = URL.createObjectURL(blob);
+            links.download = "batch_info_data.csv";
+
+            // Trigger the download
+            links.click();
+        }
+    </script>
+    <script>
+    // Function to export the view attendance table to CSV
+    function exportViewAttendanceTableToCSV() {
+        // Get the table data from the view_attendance div
+        const table = document.getElementById("view_attendance").querySelector("table");
+
+        // Extract and format the data as CSV according to the specified structure
+        let csv = "Student Name, Roll Number, Semester, Batch, Attendance\n";
+
+        // Loop through the rows and extract data (modify this part accordingly)
+        for (const row of table.querySelectorAll("tr")) {
+            const columns = row.querySelectorAll("td");
+            if (columns.length === 5) {
+                const studentName = columns[0].textContent;
+                const rollNumber = columns[1].textContent;
+                const semester = columns[2].textContent;
+                const batch = columns[3].textContent;
+                const attendance = columns[4].textContent;
+                csv += `${studentName}, ${rollNumber}, ${semester}, ${batch}, ${attendance}\n`;
+            }
+        }
+
+        // Create a Blob with the CSV data
+        const blob = new Blob([csv], { type: 'text/csv' });
+
+        // Create a link to download the CSV file
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "view_attendance_data.csv";
+
+        // Trigger the download
+        link.click();
+    }
+</script>
 </body>
