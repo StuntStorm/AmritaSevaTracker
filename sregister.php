@@ -10,6 +10,7 @@
     <?php
     session_start();
     include('connect/connection.php');
+    include('alert_messages.php'); // Include the alert_messages.php file
 
     if (isset($_POST["register"])) {
         $name = $_POST["name"];
@@ -26,11 +27,7 @@
 
         // Check if the email address has the correct domain
         if (!endsWith($email, '@am.students.amrita.edu')) {
-            ?>
-            <script>
-                alert("Incorrect email format. Please use your Amrita email address.");
-            </script>
-            <?php
+            displayAlert("Incorrect email format. Please use your Amrita email address.");
             exit; // Exit the script if the email format is incorrect
         }
 
@@ -38,11 +35,7 @@
         $emailRowCount = mysqli_num_rows($email_check_query);
 
         if ($emailRowCount > 0) {
-            ?>
-            <script>
-                alert("Sorry, email already exists for another user.");
-            </script>
-            <?php
+            displayAlert("Sorry, email already exists for another user.");
             exit; // Exit the script if the email already exists
         }
 
@@ -58,11 +51,7 @@
             $result = mysqli_query($connect, $insert_query);
 
             if (!$result) {
-                ?>
-                <script>
-                    alert("Error in student registration.");
-                </script>
-                <?php
+                displayAlert("Error in student registration.");
                 exit; // Exit the script if there was an error in registration
             }
         } else {
@@ -98,7 +87,6 @@
         return preg_match($regex, $rollNumber);
     }
     ?>
-
 
 </head>
 
