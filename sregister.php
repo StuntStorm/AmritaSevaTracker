@@ -6,14 +6,6 @@
     <title>Student Registration Form</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://kit.fontawesome.com/c4254e24a8.js" crossorigin="anonymous"></script>
-</head>
-
-<body style="width: 100%;
-    height: 100vh;
-    background-image: linear-gradient(rgba(0,0,50,0.1),rgba(0,0,50,0.1)), url(Background.jpg);
-    background-position: center;
-    background-size: cover;
-    position: relative;">
 
     <?php
     session_start();
@@ -107,6 +99,17 @@
     }
     ?>
 
+
+</head>
+
+<body style="width: 100%;
+    height: 100vh;
+    background-image: linear-gradient(rgba(0,0,50,0.1),rgba(0,0,50,0.1)), url(Background.jpg);
+    background-position: center;
+    background-size: cover;
+    position: relative;">
+
+    
     <div class="container">
         <div class="form-box" style="border-radius: 10px;  width: 90%;
     max-width: 450px;
