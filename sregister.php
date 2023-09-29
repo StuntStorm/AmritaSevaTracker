@@ -15,134 +15,7 @@
     background-size: cover;
     position: relative;">
 
-  <?php session_start(); ?>
-  <?php
-    include('connect/connection.php');
-
-    if(isset($_POST["register"])){
-        $name = $_POST["name"];
-        $email = $_POST["email"];
-        $password = $_POST["password"];
-        $rawRollNumber = $_POST["rollNumber"]; // User input with dots
-        $contact = $_POST["contact"];
-        $semester = $_POST["semester"];
-        $batch = $_POST["batch"];
-        $user_type = "student"; // Hardcoded for students
-
-    
-        // Remove dots and convert to uppercase
-        $rollNumber = strtoupper($rawRollNumber);
-    
-        // Check if the email address has the correct domain
-        if (!endsWith($email, '@am.students.amrita.edu')) {
-            ?>
-            <script>
-                alert("Incorrect email format. Please use your Amrita email address.");
-            </script>
-            <?php
-            exit; // Exit the script if the email format is incorrect
-        }
-
-        $email_check_query = mysqli_query($connect, "SELECT * FROM students WHERE Email='$email'");
-        $emailRowCount = mysqli_num_rows($email_check_query);
-    
-        if($emailRowCount > 0) {
-            ?>
-            <script>
-                alert("Sorry, email already exists for another user.");
-            </script>
-            <?php
-            exit; // Exit the script if the email already exists
-        }
-    
-    // Check if the roll number exists in the students table
-$roll_check_query = mysqli_query($connect, "SELECT * FROM students WHERE RollNumber='$rollNumber'");
-$rollRowCount = mysqli_num_rows($roll_check_query);
-
-if($rollRowCount == 0) {
-    // If roll number doesn't exist, create a new student entry
-    $password_hash = password_hash($password, PASSWORD_BCRYPT);
-    $insert_query = "INSERT INTO students (Name, RollNumber, Email, Contact, Semester, Batch, user_type, password) 
-                     VALUES ('$name', '$rollNumber', '$email', '$contact', '$semester', '$batch', '$user_type', '$password_hash')";
-    $result = mysqli_query($connect, $insert_query);
-    
-    if(!$result) {
-        ?>
-        <script>
-            alert("Error in student registration.");
-        </script>
-        <?php
-        exit; // Exit the script if there was an error in registration
-    }
-} else {
-    // Existing roll number found. Update the email and password for that roll number.
-    $password_hash = password_hash($password, PASSWORD_BCRYPT);
-    $update_query = "UPDATE students SET Email='$email', password='$password_hash' WHERE RollNumber='$rollNumber'";
-    $result = mysqli_query($connect, $update_query);
-}
-
-// Continue with the rest of your OTP sending logic...
-if($result)
-{
-    $otp = rand(100000,999999);
-    $_SESSION['otp'] = $otp;
-    $_SESSION['mail'] = $email;
-    require "Mail/phpmailer/PHPMailerAutoload.php";
-    $mail = new PHPMailer;
-
-    $mail->isSMTP();
-    $mail->Host='smtp.office365.com';
-    $mail->Port=587;
-    $mail->SMTPAuth=true;
-    $mail->SMTPSecure='tls';
-
-    $mail->Username='amritasevatracker@am.amrita.edu';
-    $mail->Password='Qoy43911';
-
-    $mail->setFrom('amritasevatracker@am.amrita.edu', 'Amrita - OTP Verification');
-    $mail->addAddress($_POST["email"]);
-
-    $mail->isHTML(true);
-    $mail->Subject="Your verify code";
-    $mail->Body="<p>Dear user, </p> <h3>Your verify OTP code is $otp <br></h3>
-    <br><br>
-    <p>With regards,</p>
-    <b>Amrita Seva Tracking Team <3</b>
-    ";
-
-    if(!$mail->send()){
-        ?>
-        <script>
-            alert("<?php echo "Register Failed, Invalid Email "?>");
-        </script>
-        <?php
-    } else {
-        ?>
-        <script>
-            alert("<?php echo "Register Successfully, OTP sent to " . $email . " || Check your JUNK mail as well." ?>");
-            window.location.replace('verification.php');
-        </script>
-        <?php
-    }
-}
-else {
-  $password_hash = password_hash($password, PASSWORD_BCRYPT);
-  $result = mysqli_query($connect, "INSERT INTO students (Name, RollNumber, Email, Contact, Semester, Batch, user_type, password) VALUES ('$name', '$rollNumber', '$email', '$contact', '$semester', '$batch', '$user_type', '$password_hash')");
-}
-}
-    
-
-// Function to check if a string ends with a specific substring
-function endsWith($string, $suffix) {
-    return substr($string, -strlen($suffix)) === $suffix;
-}
-
-// Function to validate Roll Number format
-function isValidRollNumber($rollNumber) {
-    $regex = '/^[A-Z]{2}\.[A-Z]{2}\.[A-Z0-9]{8}$/';
-    return preg_match($regex, $rollNumber);
-}
-?>
+ 
 
   <div class="container">
     <div class="form-box" style="border-radius: 10px;  width: 90%;
@@ -321,3 +194,132 @@ fetch('https://api.quotable.io/random')
   })
   .catch(error => console.error(error));
 </script>
+
+<?php session_start(); ?>
+  <?php
+    include('connect/connection.php');
+
+    if(isset($_POST["register"])){
+        $name = $_POST["name"];
+        $email = $_POST["email"];
+        $password = $_POST["password"];
+        $rawRollNumber = $_POST["rollNumber"]; // User input with dots
+        $contact = $_POST["contact"];
+        $semester = $_POST["semester"];
+        $batch = $_POST["batch"];
+        $user_type = "student"; // Hardcoded for students
+
+    
+        // Remove dots and convert to uppercase
+        $rollNumber = strtoupper($rawRollNumber);
+    
+        // Check if the email address has the correct domain
+        if (!endsWith($email, '@am.students.amrita.edu')) {
+            ?>
+            <script>
+                alert("Incorrect email format. Please use your Amrita email address.");
+            </script>
+            <?php
+            exit; // Exit the script if the email format is incorrect
+        }
+
+        $email_check_query = mysqli_query($connect, "SELECT * FROM students WHERE Email='$email'");
+        $emailRowCount = mysqli_num_rows($email_check_query);
+    
+        if($emailRowCount > 0) {
+            ?>
+            <script>
+                alert("Sorry, email already exists for another user.");
+            </script>
+            <?php
+            exit; // Exit the script if the email already exists
+        }
+    
+    // Check if the roll number exists in the students table
+$roll_check_query = mysqli_query($connect, "SELECT * FROM students WHERE RollNumber='$rollNumber'");
+$rollRowCount = mysqli_num_rows($roll_check_query);
+
+if($rollRowCount == 0) {
+    // If roll number doesn't exist, create a new student entry
+    $password_hash = password_hash($password, PASSWORD_BCRYPT);
+    $insert_query = "INSERT INTO students (Name, RollNumber, Email, Contact, Semester, Batch, user_type, password) 
+                     VALUES ('$name', '$rollNumber', '$email', '$contact', '$semester', '$batch', '$user_type', '$password_hash')";
+    $result = mysqli_query($connect, $insert_query);
+    
+    if(!$result) {
+        ?>
+        <script>
+            alert("Error in student registration.");
+        </script>
+        <?php
+        exit; // Exit the script if there was an error in registration
+    }
+} else {
+    // Existing roll number found. Update the email and password for that roll number.
+    $password_hash = password_hash($password, PASSWORD_BCRYPT);
+    $update_query = "UPDATE students SET Email='$email', password='$password_hash' WHERE RollNumber='$rollNumber'";
+    $result = mysqli_query($connect, $update_query);
+}
+
+// Continue with the rest of your OTP sending logic...
+if($result)
+{
+    $otp = rand(100000,999999);
+    $_SESSION['otp'] = $otp;
+    $_SESSION['mail'] = $email;
+    require "Mail/phpmailer/PHPMailerAutoload.php";
+    $mail = new PHPMailer;
+
+    $mail->isSMTP();
+    $mail->Host='smtp.office365.com';
+    $mail->Port=587;
+    $mail->SMTPAuth=true;
+    $mail->SMTPSecure='tls';
+
+    $mail->Username='amritasevatracker@am.amrita.edu';
+    $mail->Password='Qoy43911';
+
+    $mail->setFrom('amritasevatracker@am.amrita.edu', 'Amrita - OTP Verification');
+    $mail->addAddress($_POST["email"]);
+
+    $mail->isHTML(true);
+    $mail->Subject="Your verify code";
+    $mail->Body="<p>Dear user, </p> <h3>Your verify OTP code is $otp <br></h3>
+    <br><br>
+    <p>With regards,</p>
+    <b>Amrita Seva Tracking Team <3</b>
+    ";
+
+    if(!$mail->send()){
+        ?>
+        <script>
+            alert("<?php echo "Register Failed, Invalid Email "?>");
+        </script>
+        <?php
+    } else {
+        ?>
+        <script>
+            alert("<?php echo "Register Successfully, OTP sent to " . $email . " || Check your JUNK mail as well." ?>");
+            window.location.replace('verification.php');
+        </script>
+        <?php
+    }
+}
+else {
+  $password_hash = password_hash($password, PASSWORD_BCRYPT);
+  $result = mysqli_query($connect, "INSERT INTO students (Name, RollNumber, Email, Contact, Semester, Batch, user_type, password) VALUES ('$name', '$rollNumber', '$email', '$contact', '$semester', '$batch', '$user_type', '$password_hash')");
+}
+}
+    
+
+// Function to check if a string ends with a specific substring
+function endsWith($string, $suffix) {
+    return substr($string, -strlen($suffix)) === $suffix;
+}
+
+// Function to validate Roll Number format
+function isValidRollNumber($rollNumber) {
+    $regex = '/^[A-Z]{2}\.[A-Z]{2}\.[A-Z0-9]{8}$/';
+    return preg_match($regex, $rollNumber);
+}
+?>
