@@ -269,12 +269,6 @@
         });
     });
 
-    function isValidEmail(email) {
-        // A basic regex for validating an email format
-        var regex = /^[a-zA-Z0-9.-]+@[a-zA-Z0-9.-]+amrita\.edu$/;
-        return regex.test(email);
-    }
-
     fetch('https://api.quotable.io/random')
         .then(response => response.json())
         .then(data => {
